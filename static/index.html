@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CollPasswd - 协同密码管理</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Page -->
+        <div id="page-login" class="page active">
+            <div class="login-container">
+                <h1 class="logo">CollPasswd</h1>
+                <p class="subtitle">协同密码管理</p>
+
+                <form id="login-form" class="auth-form">
+                    <div id="login-username-group" class="form-group">
+                        <label id="login-username-label">用户名</label>
+                        <input type="text" id="login-username" placeholder="用户名" required>
+                    </div>
+                    <div id="login-password-group" class="form-group">
+                        <label>密码</label>
+                        <input type="password" id="login-password" placeholder="密码" required>
+                    </div>
+                    <div id="login-confirm-group" class="form-group" style="display:none">
+                        <label>确认密码</label>
+                        <input type="password" id="login-confirm-password" placeholder="再次输入密码">
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="login-btn">登录</button>
+                    <p id="login-error" class="error-msg"></p>
+                    <p id="login-success" class="success-msg" style="display:none"></p>
+                </form>
+
+                <div class="login-footer">
+                    <button class="btn-link" id="toggle-register" onclick="toggleRegister()">注册账号</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div id="page-main" class="page">
+            <header class="main-header">
+                <div class="header-left">
+                    <h2 class="logo-sm">CollPasswd</h2>
+                </div>
+                <div class="header-center">
+                    <span id="current-view-title"></span>
+                </div>
+                <div class="header-right">
+                    <span id="user-info" class="user-badge"></span>
+                    <button id="btn-settings" class="btn btn-sm" style="display:none" onclick="navigateTo('settings')">设置</button>
+                    <button id="btn-admin" class="btn btn-sm" style="display:none" onclick="navigateTo('admin')">管理</button>
+                    <button id="btn-audit" class="btn btn-sm" style="display:none" onclick="navigateTo('audit')">审计</button>
+                    <button class="btn btn-sm" onclick="logout()">退出</button>
+                </div>
+            </header>
+
+            <!-- Breadcrumb -->
+            <div id="breadcrumb" class="breadcrumb" style="display:none">
+                <span onclick="navigateTo('dashboard')" class="crumb-link">项目</span>
+                <span id="crumb-book" class="crumb-link" style="display:none"></span>
+                <span id="crumb-sheet" class="crumb-link" style="display:none"></span>
+            </div>
+
+            <main id="main-content">
+                <!-- Dashboard: Book List -->
+                <div id="view-dashboard" class="view active">
+                    <div class="view-header">
+                        <h3>我的项目</h3>
+                        <button id="btn-new-book" class="btn btn-sm" style="display:none" onclick="showCreateBook()">+ 新项目</button>
+                    </div>
+                    <div id="book-list" class="card-grid"></div>
+                </div>
+
+                <!-- Book Detail: sheets + search across project -->
+                <div id="view-book" class="view">
+                    <div class="view-header">
+                        <h3 id="book-title"></h3>
+                        <div style="display:flex;gap:6px">
+                            <button id="btn-export-book" class="btn btn-sm" style="display:none" onclick="exportBook()">导出项目</button>
+                            <button id="btn-import-book" class="btn btn-sm" style="display:none" onclick="importBook()">导入项目</button>
+                            <button id="btn-edit-book" class="btn btn-sm" style="display:none" onclick="showEditBook()">编辑</button>
+                            <button id="btn-delete-book" class="btn btn-sm btn-danger" style="display:none" onclick="deleteCurrentBook()">删除项目</button>
+                            <button id="btn-create-sheet" class="btn btn-sm" onclick="showCreateSheet()">+ 新表</button>
+                        </div>
+                    </div>
+
+                    <!-- Project-wide search -->
+                    <div class="search-bar">
+                        <input type="text" id="book-search" placeholder="搜索本项目中所有密码..." oninput="debounceBookSearch()">
+                        <span class="search-hint" id="book-search-count"></span>
+                    </div>
+
+                    <!-- Search results table (hidden when empty) -->
+                    <div id="book-search-results" style="display:none;margin-bottom:16px">
+                        <table class="excel-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:14%">密码表</th>
+                                    <th style="width:16%">标题</th>
+                                    <th style="width:12%">用户名</th>
+                                    <th style="width:16%">网址</th>
+                                    <th style="width:25%">密码</th>
+                                    <th style="width:17%;text-align:right">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="book-search-body"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Sheets grid -->
+                    <div class="view-subheader" style="margin-bottom:10px;color:var(--text3);font-size:12px;letter-spacing:0.03em;text-transform:uppercase">密码表</div>
+                    <div id="sheet-list" class="card-grid"></div>
+
+                    <!-- Members -->
+                    <div id="book-members" class="section">
+                        <div class="section-header">
+                            <h4>成员</h4>
+                            <span id="member-count" class="section-count"></span>
+                            <button class="btn btn-sm" onclick="showAddMember()" style="margin-left:auto">+ 添加成员</button>
+                        </div>
+                        <div id="member-list"></div>
+                    </div>
+
+                    <!-- Book Audit Log -->
+                    <div id="book-audit" class="section">
+                        <div class="section-header">
+                            <h4>审计日志</h4>
+                            <span class="section-count">最近操作</span>
+                        </div>
+                        <div id="book-audit-list"></div>
+                    </div>
+                </div>
+
+                <!-- Sheet Detail: Password Entries as Excel Table -->
+                <div id="view-sheet" class="view">
+                    <div class="view-header">
+                        <h3 id="sheet-title"></h3>
+                        <div style="display:flex;gap:6px">
+                            <button id="btn-export-sheet" class="btn btn-sm" onclick="exportSheet()">导出</button>
+                            <button id="btn-import-sheet" class="btn btn-sm" onclick="importSheet()">导入</button>
+                            <button id="btn-create-password" class="btn btn-sm" onclick="showCreatePassword()">+ 新密码</button>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div id="password-stats" class="stats-bar"></div>
+
+                    <!-- In-sheet search -->
+                    <div class="search-bar">
+                        <input type="text" id="sheet-search" placeholder="过滤当前表中的密码..." oninput="debounceSheetSearch()">
+                        <span class="search-hint" id="sheet-search-count"></span>
+                    </div>
+
+                    <!-- Excel-style table -->
+                    <table class="excel-table">
+                        <thead>
+                            <tr>
+                                <th style="width:22%">标题</th>
+                                <th style="width:15%">用户名</th>
+                                <th style="width:20%">网址</th>
+                                <th style="width:25%">密码</th>
+                                <th style="width:18%;text-align:right">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="password-list"></tbody>
+                    </table>
+                </div>
+
+                <!-- Admin Panel -->
+                <div id="view-admin" class="view">
+                    <div class="view-header">
+                        <h3>用户管理</h3>
+                        <button class="btn btn-sm" onclick="showCreateUser()">+ 新用户</button>
+                    </div>
+
+                    <div id="admin-stats" class="stats-bar"></div>
+
+                    <table class="excel-table">
+                        <thead>
+                            <tr>
+                                <th style="width:30%">用户</th>
+                                <th style="width:15%">角色</th>
+                                <th style="width:35%">创建时间</th>
+                                <th style="width:20%;text-align:right">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-list"></tbody>
+                    </table>
+                </div>
+
+                <!-- Global Audit Log (admin only) -->
+                <div id="view-audit" class="view">
+                    <div class="view-header">
+                        <h3>审计日志</h3>
+                        <div class="search-bar" style="margin:0">
+                            <input type="text" id="audit-search" placeholder="按操作类型过滤 (view/create/update/delete)..." oninput="filterAuditLogs()" style="max-width:300px">
+                            <span class="search-hint" id="audit-search-count"></span>
+                        </div>
+                    </div>
+                    <div id="audit-stats" class="stats-bar"></div>
+                    <table class="excel-table">
+                        <thead>
+                            <tr>
+                                <th style="width:16%">时间</th>
+                                <th style="width:12%">用户</th>
+                                <th style="width:10%">操作</th>
+                                <th style="width:14%">项目</th>
+                                <th style="width:28%">密码/详情</th>
+                                <th style="width:20%;text-align:right">所属表</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-list"></tbody>
+                    </table>
+                </div>
+
+                <!-- Settings (admin only) -->
+                <div id="view-settings" class="view">
+                    <div class="view-header">
+                        <h3>平台设置</h3>
+                    </div>
+                    <div id="settings-form" style="max-width:480px">
+                        <div class="form-group">
+                            <label>登录有效期（小时）</label>
+                            <input type="number" id="setting-jwt-expiry" min="1" max="720" value="24">
+                            <p style="font-size:12px;color:var(--text3);margin-top:4px">设置后，现有登录不会立即失效，新的登录将使用此有效期。范围：1-720 小时（1 小时 ~ 30 天）</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+                        <p id="settings-msg" class="success-msg" style="display:none;margin-top:8px"></p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal-overlay" class="modal-overlay" style="display:none" onclick="closeModal(event)">
+        <div id="modal-content" class="modal-content" onclick="event.stopPropagation()">
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

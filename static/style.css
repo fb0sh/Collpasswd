@@ -1,0 +1,625 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   CollPasswd — 白色学术风 · White Academic Theme
+   Design: paper-like, Excel-style tables, typography-driven
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg:           #ffffff;
+    --surface:      #fafafa;
+    --surface2:     #f2f2f2;
+    --border:       #d4d4d4;
+    --border-light: #e8e8e8;
+    --text:         #1a1a1a;
+    --text2:        #555555;
+    --text3:        #888888;
+    --accent:       #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-bg:    #eff6ff;
+    --danger:       #dc2626;
+    --danger-bg:    #fef2f2;
+    --success:      #16a34a;
+    --warm:         #d97706;
+    --radius:       2px;
+    --font-ui:      'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-serif:   'Georgia', 'Noto Serif SC', 'Source Han Serif SC', serif;
+    --font-mono:    'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
+}
+
+body {
+    font-family: var(--font-ui);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* ─── Pages ─────────────────────────────────────────── */
+
+.page { display: none; }
+.page.active { display: block; }
+
+/* ─── Login ─────────────────────────────────────────── */
+
+#page-login.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: var(--surface);
+}
+
+.login-container {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 48px 40px 36px;
+    width: 380px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.logo {
+    font-family: var(--font-serif);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.subtitle {
+    font-size: 12px;
+    color: var(--text3);
+    letter-spacing: 0.04em;
+    margin-bottom: 32px;
+}
+
+.auth-form { text-align: left; }
+
+.form-group { margin-bottom: 16px; }
+.form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    margin-bottom: 4px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 8px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 14px;
+    font-family: var(--font-ui);
+    outline: none;
+    transition: border-color 0.15s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: var(--accent);
+}
+.form-group textarea { resize: vertical; min-height: 60px; }
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: var(--font-ui);
+    font-weight: 500;
+    background: var(--bg);
+    color: var(--text2);
+    transition: all 0.12s;
+}
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-danger {
+    color: var(--danger);
+    border-color: var(--border);
+}
+.btn-danger:hover {
+    background: var(--danger-bg);
+    border-color: var(--danger);
+}
+
+.error-msg { color: var(--danger); font-size: 12px; margin-top: 6px; min-height: 18px; }
+.success-msg { color: var(--success); font-size: 12px; margin-top: 6px; min-height: 18px; }
+
+.login-footer { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-light); }
+.btn-link {
+    background: none; border: none;
+    color: var(--text3); cursor: pointer;
+    font-size: 12px; font-family: var(--font-ui);
+}
+.btn-link:hover { color: var(--accent); }
+
+/* ─── Main Header ───────────────────────────────────── */
+
+.main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo-sm {
+    font-family: var(--font-serif);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
+}
+
+.header-center {
+    font-size: 13px;
+    color: var(--text3);
+}
+
+.header-right { display: flex; gap: 6px; align-items: center; }
+
+.user-badge {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--font-mono);
+    padding: 2px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+}
+
+/* ─── Breadcrumb ────────────────────────────────────── */
+
+.breadcrumb {
+    padding: 8px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border-light);
+    font-size: 12px;
+    color: var(--text3);
+}
+.crumb-link { cursor: pointer; color: var(--text3); }
+.crumb-link:hover { color: var(--accent); }
+.crumb-link::after { content: " / "; color: var(--border); padding: 0 3px; }
+.crumb-link:last-child::after { content: ""; }
+
+/* ─── Main Content ──────────────────────────────────── */
+
+#main-content { max-width: 1200px; margin: 0 auto; padding: 24px 24px 60px; }
+
+.view { display: none; }
+.view.active { display: block; }
+
+/* ─── Page Header ───────────────────────────────────── */
+
+.view-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.view-header h3 {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+/* ─── Search Bar ────────────────────────────────────── */
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 8px;
+}
+.search-bar input {
+    flex: 1;
+    max-width: 360px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-family: var(--font-mono);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.12s;
+}
+.search-bar input:focus {
+    border-color: var(--accent);
+}
+.search-bar .search-hint {
+    font-size: 11px;
+    color: var(--text3);
+}
+
+/* ─── Stats Bar — brief summary row ────────────────── */
+
+.stats-bar {
+    display: flex;
+    gap: 1px;
+    background: var(--border-light);
+    border: 1px solid var(--border-light);
+    margin-bottom: 16px;
+}
+.stat-item {
+    background: var(--surface);
+    padding: 10px 18px;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+}
+.stat-value {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+}
+.stat-label {
+    font-size: 11px;
+    color: var(--text3);
+}
+
+/* ─── Excel-style Table ─────────────────────────────── */
+
+.excel-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    table-layout: fixed;
+}
+
+.excel-table thead th {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 7px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text2);
+    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.excel-table tbody td {
+    border: 1px solid var(--border-light);
+    padding: 6px 10px;
+    vertical-align: middle;
+    transition: background 0.08s;
+}
+
+.excel-table tbody tr:nth-child(even) td {
+    background: #f8f8fa;
+}
+
+.excel-table tbody tr:hover td {
+    background: #eef2ff;
+}
+
+.excel-table .col-title   { width: 28%; }
+.excel-table .col-username { width: 18%; }
+.excel-table .col-url     { width: 28%; }
+.excel-table .col-actions { width: 26%; text-align: right; }
+
+.excel-table .cell-title {
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+}
+.excel-table .cell-title:hover {
+    color: var(--accent);
+}
+.excel-table .cell-mono {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text2);
+}
+.excel-table .cell-url {
+    font-size: 12px;
+    color: var(--text3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+}
+.excel-table .cell-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+/* no-data cell */
+.excel-table .cell-empty {
+    color: var(--text3);
+    font-style: italic;
+    font-size: 12px;
+}
+
+/* expanded detail row inside the table */
+.excel-detail-row td {
+    padding: 0 !important;
+    border: none !important;
+    background: var(--bg) !important;
+}
+.excel-detail-row:hover td {
+    background: var(--bg) !important;
+}
+.excel-detail {
+    padding: 0 10px 12px 10px;
+    border-bottom: 2px solid var(--accent);
+    display: none;
+}
+.excel-detail.open { display: block; }
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 24px;
+    padding: 10px 0;
+}
+.detail-field {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    font-size: 13px;
+}
+.detail-field .dlabel {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text3);
+    min-width: 50px;
+    flex-shrink: 0;
+    font-weight: 600;
+}
+.detail-field .dvalue {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text);
+    word-break: break-all;
+}
+.detail-field .dvalue-plain {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--text);
+    white-space: pre-wrap;
+}
+
+.detail-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-light);
+}
+
+/* Revealed password styling */
+.revealed-pass {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.revealed-pass .pass-text {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 2px 6px;
+    background: #fef9e7;
+    border: 1px solid #f0e6c0;
+    border-radius: 2px;
+}
+.revealed-pass .btn-reveal {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text3);
+    padding: 1px 8px;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    border-radius: 2px;
+    transition: all 0.1s;
+}
+.revealed-pass .btn-reveal:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* ─── Cards (for books/sheets grid) ─────────────────── */
+
+.card-grid {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.12s;
+}
+.card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 1px 4px rgba(37,99,235,0.1);
+}
+.card h4 {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: var(--text);
+}
+.card .card-meta {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--font-mono);
+    margin-top: 6px;
+}
+.card .card-desc {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+}
+
+/* ─── Members ───────────────────────────────────────── */
+
+.section { margin-top: 28px; }
+.section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.section-header h4 {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+}
+.section-header .section-count {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--font-mono);
+}
+
+.member-table { width: 100%; border-collapse: collapse; border: 1px solid var(--border); }
+.member-table th {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text2);
+    text-align: left;
+}
+.member-table td {
+    border: 1px solid var(--border-light);
+    padding: 6px 10px;
+    font-size: 13px;
+}
+.member-table tbody tr:nth-child(even) td { background: #f8f8fa; }
+
+.member-role-select {
+    font-size: 12px;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    background: var(--bg);
+    color: var(--text2);
+    cursor: pointer;
+    outline: none;
+    font-family: var(--font-mono);
+}
+.member-role-select:focus {
+    border-color: var(--accent);
+}
+
+.role-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 1px 8px;
+    border: 1px solid var(--border);
+    color: var(--text2);
+}
+.role-badge.admin {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-bg);
+}
+.role-badge.editor {
+    border-color: var(--warm);
+    color: var(--warm);
+    background: #fffbeb;
+}
+.role-badge.viewer {
+    border-color: var(--border);
+    color: var(--text3);
+}
+
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal-content {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 28px;
+    width: 440px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+.modal-content h3 {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+.modal-content .form-group { margin-bottom: 14px; }
+.modal-content .btn { width: 100%; margin-top: 6px; }
+
+/* ─── Empty & Loading ───────────────────────────────── */
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text3);
+    font-size: 13px;
+    border: 1px solid var(--border-light);
+    background: var(--surface);
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text3);
+    font-size: 12px;
+    font-family: var(--font-mono);
+}
+
+/* ─── Responsive ────────────────────────────────────── */
+
+@media (max-width: 720px) {
+    .main-header { padding: 10px 14px; flex-wrap: wrap; }
+    .header-center { display: none; }
+    #main-content { padding: 16px 14px 40px; }
+    .card-grid { grid-template-columns: 1fr; }
+    .login-container { width: 92%; padding: 28px 20px; }
+    .excel-table { font-size: 12px; }
+    .excel-table .col-url { display: none; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .stats-bar { flex-wrap: wrap; }
+}

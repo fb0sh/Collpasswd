@@ -40,8 +40,23 @@ CollPasswd 的设计围绕三个核心原则：
 ## 系统截图
 
 
+<img width="1337" height="829" alt="image" src="https://github.com/user-attachments/assets/c23f31cf-0de9-4008-84b0-fe6baf6af695" />
 
+<img width="1333" height="792" alt="image" src="https://github.com/user-attachments/assets/71c39862-aaed-42a8-b7a0-f83b0eed07f2" />
 
+<img width="1325" height="794" alt="image" src="https://github.com/user-attachments/assets/55dd3f2a-ff7e-442a-9f57-a0794b2a91c1" />
+
+<img width="1309" height="777" alt="image" src="https://github.com/user-attachments/assets/d74b7fdb-93aa-4c53-827b-a241db98036b" />
+
+<img width="1318" height="777" alt="image" src="https://github.com/user-attachments/assets/788205aa-735d-47f1-98ec-e196b109be56" />
+
+<img width="1185" height="707" alt="image" src="https://github.com/user-attachments/assets/a86a2ff6-0940-45fd-975f-89a93614543d" />
+
+<img width="1327" height="681" alt="image" src="https://github.com/user-attachments/assets/bb5ce37c-f924-44c3-9874-f34c6d16a0e7" />
+
+<img width="1309" height="728" alt="image" src="https://github.com/user-attachments/assets/94a78666-28ca-41fd-b9e1-60b458ef0fff" />
+
+<img width="1298" height="803" alt="image" src="https://github.com/user-attachments/assets/505c1ab6-179b-42cb-9bed-c06d7d72c644" />
 
 
 

@@ -179,6 +179,24 @@ pub async fn export_book(
     Ok(Json(result))
 }
 
+fn entry_detail(entry: &IoPassword) -> String {
+    let mut parts = Vec::new();
+    if !entry.title.is_empty() {
+        parts.push(format!("标题={}", entry.title));
+    }
+    if let Some(ref u) = entry.username {
+        if !u.is_empty() {
+            parts.push(format!("用户名={}", u));
+        }
+    }
+    if let Some(ref u) = entry.url {
+        if !u.is_empty() {
+            parts.push(format!("网址={}", u));
+        }
+    }
+    parts.join(" | ")
+}
+
 /// POST /api/sheets/:id/import — import passwords into a sheet
 pub async fn import_sheet(
     AuthWithDb { user, db, .. }: AuthWithDb,
@@ -204,11 +222,15 @@ pub async fn import_sheet(
         .map_err(|e| AppError::internal(format!("Failed to load book public key: {}", e)))?;
 
     let mut imported = 0i64;
-    let mut errors = 0i64;
+    let mut error_details: Vec<String> = Vec::new();
 
-    for entry in &passwords {
+    for (idx, entry) in passwords.iter().enumerate() {
+        let identity = entry_detail(entry);
+        let label = if identity.is_empty() { format!("#{}", idx + 1) } else { format!("#{}: {}", idx + 1, identity) };
+
         if entry.title.trim().is_empty() || entry.password.is_empty() {
-            errors += 1;
+            let reason = if entry.title.trim().is_empty() { "标题为空" } else { "密码为空" };
+            error_details.push(format!("{}（{}）", label, reason));
             continue;
         }
 
@@ -226,12 +248,12 @@ pub async fn import_sheet(
                     log_action(&conn, book_id, Some(sheet_id), Some(pid), user.id, &user.username, "create_password", &format!("{}：{}", entry.title, username));
                     imported += 1;
                 } else {
-                    errors += 1;
+                    error_details.push(format!("{}（数据库写入失败）", label));
                 }
             }
             Err(e) => {
                 tracing::error!("Import encrypt failed: {}", e);
-                errors += 1;
+                error_details.push(format!("{}（加密失败）", label));
             }
         }
     }
@@ -239,7 +261,8 @@ pub async fn import_sheet(
     Ok(Json(serde_json::json!({
         "success": true,
         "imported": imported,
-        "errors": errors
+        "errors": error_details.len(),
+        "error_details": error_details,
     })))
 }
 
@@ -264,13 +287,14 @@ pub async fn import_book(
         .map_err(|e| AppError::internal(format!("Failed to load book public key: {}", e)))?;
 
     let mut total_imported = 0i64;
-    let mut total_errors = 0i64;
+    let mut total_error_details: Vec<String> = Vec::new();
+    let mut entry_counter = 0i64;
 
     for sheet_entry in &data {
         let sheet_name = sheet_entry.get("sheet_name").and_then(|v| v.as_str()).unwrap_or("导入的密码").to_string();
         let passwords: Vec<IoPassword> = match serde_json::from_value(sheet_entry.get("passwords").unwrap_or(&serde_json::Value::Null).clone()) {
             Ok(p) => p,
-            Err(_) => { total_errors += 1; continue; }
+            Err(_) => { total_error_details.push(format!("表「{}」格式错误", &sheet_name)); continue; }
         };
 
         // Find or create the sheet
@@ -290,8 +314,13 @@ pub async fn import_book(
         };
 
         for entry in &passwords {
+            entry_counter += 1;
+            let identity = entry_detail(entry);
+            let label = if identity.is_empty() { format!("#{}", entry_counter) } else { format!("#{}: {}", entry_counter, identity) };
+
             if entry.title.trim().is_empty() || entry.password.is_empty() {
-                total_errors += 1;
+                let reason = if entry.title.trim().is_empty() { "标题为空" } else { "密码为空" };
+                total_error_details.push(format!("{}（{}）", label, reason));
                 continue;
             }
 
@@ -309,12 +338,12 @@ pub async fn import_book(
                         log_action(&conn, book_id, Some(sheet_id), Some(pid), user.id, &user.username, "create_password", &format!("{}：{}", entry.title, username));
                         total_imported += 1;
                     } else {
-                        total_errors += 1;
+                        total_error_details.push(format!("{}（数据库写入失败）", label));
                     }
                 }
                 Err(e) => {
                     tracing::error!("Import encrypt failed: {}", e);
-                    total_errors += 1;
+                    total_error_details.push(format!("{}（加密失败）", label));
                 }
             }
         }
@@ -323,6 +352,7 @@ pub async fn import_book(
     Ok(Json(serde_json::json!({
         "success": true,
         "imported": total_imported,
-        "errors": total_errors
+        "errors": total_error_details.len(),
+        "error_details": total_error_details,
     })))
 }

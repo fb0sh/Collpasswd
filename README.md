@@ -2,6 +2,8 @@
 
 密码共享，本该如此安全。
 
+[![Release](https://github.com/fb0sh/Collpasswd/actions/workflows/release.yml/badge.svg)](https://github.com/fb0sh/Collpasswd/actions/workflows/release.yml)
+
 ---
 
 ## 设计理念
@@ -31,7 +33,11 @@ CollPasswd 的设计围绕三个核心原则：
 - **内建 TLS** — 启动时自动生成自签名证书，无需额外配置
 - **多用户协作** — 以"项目(Book)"为单位共享密码，支持细粒度权限
 - **审计日志** — 记录所有密码查看/添加/修改/删除操作
-- **导入导出** — 项目和表级别的 CSV 导入/导出
+- **导入导出** — 项目和表级别的 CSV 导入/导出，支持 Excel 兼容的 UTF-8 BOM
+- **导入预览** — CSV 导入前预览数据，确认无误后再写入
+- **导入错误详情** — 失败逐条显示原因（标题为空/密码为空/加密失败等）
+- **下载导入模板** — 一键下载 CSV 模板，按模板填写即可快捷导入
+- **批量选择删除** — 密码列表和搜索结果中支持多选 + 全选，一键批量删除
 - **自助注册** — 用户可自行注册账号，由项目所有者分配权限
 - **密码内存安全** — 密码仅在显示在界面时短暂存在于浏览器内存中，操作完成后立即清除
 
@@ -64,22 +70,40 @@ CollPasswd 的设计围绕三个核心原则：
 
 ### 下载 & 运行
 
+#### 方式一：下载预编译二进制（推荐）
+
+从 [Releases](https://github.com/fb0sh/Collpasswd/releases) 下载对应平台的二进制文件：
+
+| 平台 | 架构 | 文件 |
+|------|------|------|
+| Linux | x86_64 | `collpasswd-*-x86_64-linux-gnu.tar.gz` |
+| Linux | ARM64 | `collpasswd-*-aarch64-linux-gnu.tar.gz` |
+| macOS | Apple Silicon | `collpasswd-*-aarch64-macos.tar.gz` |
+| Windows | x86_64 | `collpasswd-*-x86_64-windows.exe` |
+| Windows | ARM64 | `collpasswd-*-aarch64-windows.exe` |
+
+解压后直接运行：
+
 ```bash
-# 克隆仓库
-git clone https://github.com/yourname/collpasswd.git
-cd collpasswd
-
-# 构建
-cargo build --release
-
-# 运行（首次运行会提示设置管理员密码）
-./target/release/collpasswd
+# Linux / macOS
+./collpasswd
 
 # 指定端口和数据库路径
-./target/release/collpasswd --addr 0.0.0.0:8443 --db data.db
+./collpasswd --addr 0.0.0.0:8443 --db data.db
 
 # 不使用 TLS（HTTP 明文，仅限内网）
-./target/release/collpasswd --no-tls --addr 0.0.0.0:8080
+./collpasswd --no-tls --addr 0.0.0.0:8080
+```
+
+> 首次启动会提示设置**管理员密码**（≥6位，终端输入不会回显），请妥善保管！
+
+#### 方式二：源码构建
+
+```bash
+git clone https://github.com/yourname/collpasswd.git
+cd collpasswd
+cargo build --release
+./target/release/collpasswd
 ```
 
 首次启动会：

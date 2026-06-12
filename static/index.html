@@ -95,17 +95,23 @@
 
                     <!-- Search results table (hidden when empty) -->
                     <div id="book-search-results" style="display:none;margin-bottom:16px">
+                        <div id="search-batch-bar" style="display:none;margin-bottom:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--danger);border-left:4px solid var(--danger)">
+                            <span id="search-selected-count" style="font-size:13px;color:var(--text2);font-weight:500">已选择 0 项</span>
+                            <button class="btn btn-sm btn-danger" onclick="batchDeleteSearch()" style="margin-left:12px;font-weight:600">批量删除</button>
+                            <button class="btn btn-sm" onclick="clearSearchSelection()" style="margin-left:6px">取消选择</button>
+                        </div>
                         <table class="excel-table">
                             <thead>
                                 <tr>
-                                    <th style="width:12%">密码表</th>
-                                    <th style="width:14%">标题</th>
+                                    <th style="width:28px"><input type="checkbox" id="search-select-all" onchange="toggleAllSearchCheckboxes()" style="margin:0"></th>
+                                    <th style="width:11%">密码表</th>
+                                    <th style="width:13%">标题</th>
                                     <th style="width:10%">用户名</th>
                                     <th style="width:14%">网址</th>
                                     <th style="width:22%">密码</th>
-                                    <th style="width:14%">更新于</th>
+                                    <th style="width:16%">更新于</th>
                                     <th style="width:8%">更新人</th>
-                                    <th style="width:6%;text-align:right">操作</th>
+                                    <th style="width:8%;text-align:right">操作</th>
                                 </tr>
                             </thead>
                             <tbody id="book-search-body"></tbody>
@@ -158,15 +164,21 @@
                     </div>
 
                     <!-- Excel-style table -->
+                    <div id="pw-batch-bar" style="display:none;margin-bottom:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--danger);border-left:4px solid var(--danger)">
+                        <span id="pw-selected-count" style="font-size:13px;color:var(--text2);font-weight:500">已选择 0 项</span>
+                        <button class="btn btn-sm btn-danger" onclick="batchDeletePw()" style="margin-left:12px;font-weight:600">批量删除</button>
+                        <button class="btn btn-sm" onclick="clearPwSelection()" style="margin-left:6px">取消选择</button>
+                    </div>
                     <table class="excel-table">
                         <thead>
                             <tr>
-                                <th style="width:16%">标题</th>
-                                <th style="width:12%">用户名</th>
-                                <th style="width:16%">网址</th>
-                                <th style="width:22%">密码</th>
-                                <th style="width:15%">更新于</th>
-                                <th style="width:9%">更新人</th>
+                                <th style="width:28px"><input type="checkbox" id="pw-select-all" onchange="toggleAllPwCheckboxes()" style="margin:0"></th>
+                                <th style="width:13%">标题</th>
+                                <th style="width:10%">用户名</th>
+                                <th style="width:14%">网址</th>
+                                <th style="width:20%">密码</th>
+                                <th style="width:16%">更新于</th>
+                                <th style="width:8%">更新人</th>
                                 <th style="width:10%;text-align:right">操作</th>
                             </tr>
                         </thead>

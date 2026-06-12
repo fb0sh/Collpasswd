@@ -768,7 +768,7 @@ function filterBookPasswords() {
         count.textContent = matches.length + ' 条匹配 "' + q + '"';
 
         if (matches.length === 0) {
-            body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">无匹配结果</td></tr>';
+            body.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">无匹配结果</td></tr>';
             resultsEl.style.display = 'block';
             return;
         }
@@ -777,10 +777,11 @@ function filterBookPasswords() {
             const pwId = 'search-' + p.id;
             return `
             <tr>
-                <td style="font-weight:500;color:var(--text3)">${escapeHtml(p.sheet_name)}</td>
-                <td style="font-weight:500">${highlightMatch(escapeHtml(p.title), q)}</td>
-                <td class="cell-mono">${p.username ? highlightMatch(escapeHtml(p.username), q) : '<span class="cell-empty">—</span>'}</td>
-                <td>${p.url ? '<span class="cell-url" title="' + escapeHtml(p.url) + '">' + highlightMatch(escapeHtml(p.url.length > 40 ? p.url.slice(0,37)+'...' : p.url), q) + '</span>' : '<span class="cell-empty">—</span>'}</td>
+                <td style="text-align:center"><input type="checkbox" class="search-checkbox" data-sheet-id="${p.sheet_id}" data-pw-id="${p.id}" onchange="updateSearchBatchBar()" style="margin:0"></td>
+                <td style="font-weight:500;color:var(--text3)" title="${escapeHtml(p.sheet_name)}">${escapeHtml(p.sheet_name)}</td>
+                <td style="font-weight:500" title="${escapeHtml(p.title)}">${highlightMatch(escapeHtml(p.title), q)}</td>
+                <td class="cell-mono" title="${escapeHtml(p.username || '')}">${p.username ? highlightMatch(escapeHtml(p.username), q) : '<span class="cell-empty">—</span>'}</td>
+                <td title="${escapeHtml(p.url || '')}" style="white-space:nowrap">${escapeHtml(p.url || '') || '<span class="cell-empty">—</span>'}</td>
                 <td id="search-pass-cell-${pwId}">
                     <span class="revealed-pass">
                         <span class="pass-text" id="search-pass-text-${pwId}">••••••••</span>
@@ -788,7 +789,7 @@ function filterBookPasswords() {
                         <button class="btn-reveal" onclick="searchCopyPassword(${p.sheet_id},${p.id})" id="search-btn-copy-${pwId}">复制</button>
                     </span>
                 </td>
-                <td class="cell-mono" style="font-size:11px">${p.updated_at ? p.updated_at.replace(/(\d{4}-\d{2}-\d{2})T?(\d{2}:\d{2}).*$/, '$1 $2') : '—'}</td>
+                <td class="cell-mono" style="font-size:11px;white-space:nowrap">${p.updated_at ? p.updated_at.replace(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}).*$/, '$1') : '—'}</td>
                 <td style="font-size:11px;color:var(--text2)">${escapeHtml(p.updated_by_username || '') || '<span class="cell-empty">—</span>'}</td>
                 <td style="text-align:right;white-space:nowrap">
                     <button class="btn btn-sm" onclick="showEditPasswordFromSearch(${p.id}, ${p.sheet_id})">编辑</button>
@@ -798,7 +799,7 @@ function filterBookPasswords() {
 
         resultsEl.style.display = 'block';
     }).catch(e => {
-        body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">搜索失败</td></tr>';
+        body.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">搜索失败</td></tr>';
         resultsEl.style.display = 'block';
     });
 }
@@ -936,8 +937,7 @@ async function loadSheet(sheetId, canEdit) {
     document.getElementById('btn-export-sheet').style.display = _currentSheetCanEdit ? 'inline-block' : 'none';
     document.getElementById('btn-import-sheet').style.display = _currentSheetCanEdit ? 'inline-block' : 'none';
 
-    // Loading state
-    el.innerHTML = '<tr><td colspan="7" class="loading">加载中</td></tr>';
+    el.innerHTML = '<tr><td colspan="8" class="loading">加载中</td></tr>';
 
     try {
         const passwords = await get('/api/sheets/' + sheetId + '/passwords');
@@ -967,13 +967,13 @@ async function loadSheet(sheetId, canEdit) {
         `;
 
         if (passwords.length === 0) {
-            el.innerHTML = '<tr><td colspan="7" class="empty-state">' + (_currentSheetCanEdit ? '暂无密码，点击上方按钮添加' : '暂无密码') + '</td></tr>';
+            el.innerHTML = '<tr><td colspan="8" class="empty-state">' + (_currentSheetCanEdit ? '暂无密码，点击上方按钮添加' : '暂无密码') + '</td></tr>';
             return;
         }
 
         renderPasswordRows(passwords);
     } catch (e) {
-        el.innerHTML = '<tr><td colspan="7" class="empty-state">加载失败: ' + escapeHtml(e.message) + '</td></tr>';
+        el.innerHTML = '<tr><td colspan="8" class="empty-state">加载失败: ' + escapeHtml(e.message) + '</td></tr>';
         statsEl.innerHTML = '';
     }
 }
@@ -994,9 +994,10 @@ function renderPasswordRows(passwords) {
     const el = document.getElementById('password-list');
     el.innerHTML = passwords.map(p => `
         <tr class="pw-row" id="pw-row-${p.id}">
-            <td style="font-weight:500">${escapeHtml(p.title)}</td>
-            <td class="cell-mono">${p.username || '<span class="cell-empty">—</span>'}</td>
-            <td>${p.url ? '<span class="cell-url" title="' + escapeHtml(p.url) + '">' + escapeHtml(p.url.length > 35 ? p.url.slice(0,32)+'...' : p.url) + '</span>' : '<span class="cell-empty">—</span>'}</td>
+            <td style="text-align:center"><input type="checkbox" class="pw-checkbox" data-pw-id="${p.id}" onchange="updatePwBatchBar()" style="margin:0"></td>
+            <td style="font-weight:500" title="${escapeHtml(p.title)}">${escapeHtml(p.title)}</td>
+            <td class="cell-mono" title="${escapeHtml(p.username || '')}">${p.username || '<span class="cell-empty">—</span>'}</td>
+            <td title="${escapeHtml(p.url || '')}" style="white-space:nowrap">${p.url || '<span class="cell-empty">—</span>'}</td>
             <td id="pw-pass-cell-${p.id}">
                 <span class="revealed-pass">
                     <span class="pass-text" id="pass-text-${p.id}">••••••••</span>
@@ -1004,7 +1005,7 @@ function renderPasswordRows(passwords) {
                     <button class="btn-reveal" onclick="copyPassword(${p.id})" id="btn-copy-${p.id}">复制</button>
                 </span>
             </td>
-            <td class="cell-mono" style="font-size:11px">${p.updated_at ? p.updated_at.replace(/(\d{4}-\d{2}-\d{2})T?(\d{2}:\d{2}).*$/, '$1 $2') : '—'}</td>
+            <td class="cell-mono" style="font-size:11px;white-space:nowrap">${p.updated_at ? p.updated_at.replace(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}).*$/, '$1') : '—'}</td>
             <td style="font-size:11px;color:var(--text2)">${escapeHtml(p.updated_by_username || '') || '<span class="cell-empty">—</span>'}</td>
             <td style="text-align:right;white-space:nowrap">
                 ${_currentSheetCanEdit ? `<button class="btn btn-sm" onclick="showEditPassword(${p.id})">编辑</button><button class="btn btn-sm btn-danger" onclick="deletePassword(${p.id})" style="margin-left:4px">删除</button>` : ''}
@@ -1155,6 +1156,99 @@ async function createPassword() {
     }
 }
 
+
+// ─── Batch Select / Delete ─────────────────────────────────────────────────
+
+function updatePwBatchBar() {
+    const checked = document.querySelectorAll('.pw-checkbox:checked');
+    const bar = document.getElementById('pw-batch-bar');
+    const count = document.getElementById('pw-selected-count');
+    if (checked.length > 0) {
+        bar.style.display = 'block';
+        count.textContent = '已选择 ' + checked.length + ' 项';
+    } else {
+        bar.style.display = 'none';
+    }
+}
+
+function updateSearchBatchBar() {
+    const checked = document.querySelectorAll('.search-checkbox:checked');
+    const bar = document.getElementById('search-batch-bar');
+    const count = document.getElementById('search-selected-count');
+    if (checked.length > 0) {
+        bar.style.display = 'block';
+        count.textContent = '已选择 ' + checked.length + ' 项';
+    } else {
+        bar.style.display = 'none';
+    }
+}
+
+function toggleAllPwCheckboxes() {
+    const all = document.getElementById('pw-select-all');
+    document.querySelectorAll('.pw-checkbox').forEach(cb => cb.checked = all.checked);
+    updatePwBatchBar();
+}
+
+function toggleAllSearchCheckboxes() {
+    const all = document.getElementById('search-select-all');
+    document.querySelectorAll('.search-checkbox').forEach(cb => cb.checked = all.checked);
+    updateSearchBatchBar();
+}
+
+function clearPwSelection() {
+    document.querySelectorAll('.pw-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('pw-select-all').checked = false;
+    document.getElementById('pw-batch-bar').style.display = 'none';
+}
+
+function clearSearchSelection() {
+    document.querySelectorAll('.search-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('search-select-all').checked = false;
+    document.getElementById('search-batch-bar').style.display = 'none';
+}
+
+async function batchDeletePw() {
+    const ids = [];
+    document.querySelectorAll('.pw-checkbox:checked').forEach(cb => ids.push(parseInt(cb.dataset.pwId)));
+    if (ids.length === 0) return;
+    if (!confirm('确认删除选中的 ' + ids.length + ' 条密码？此操作不可撤销。')) return;
+    let success = 0, fail = 0;
+    for (const id of ids) {
+        try {
+            await del('/api/passwords/' + id);
+            success++;
+        } catch (e) {
+            fail++;
+        }
+    }
+    clearPwSelection();
+    alert('删除完成：成功 ' + success + ' 条' + (fail > 0 ? '，失败 ' + fail + ' 条' : ''));
+    loadSheet(_currentSheetId);
+}
+
+async function batchDeleteSearch() {
+    const items = [];
+    document.querySelectorAll('.search-checkbox:checked').forEach(cb => {
+        items.push({ sheetId: parseInt(cb.dataset.sheetId), pwId: parseInt(cb.dataset.pwId) });
+    });
+    if (items.length === 0) return;
+    if (!confirm('确认删除选中的 ' + items.length + ' 条密码？此操作不可撤销。')) return;
+    let success = 0, fail = 0;
+    for (const item of items) {
+        try {
+            await del('/api/passwords/' + item.pwId);
+            success++;
+        } catch (e) {
+            fail++;
+        }
+    }
+    clearSearchSelection();
+    alert('删除完成：成功 ' + success + ' 条' + (fail > 0 ? '，失败 ' + fail + ' 条' : ''));
+    // Re-run search to refresh
+    const q = document.getElementById('book-search').value.trim();
+    if (q) filterBookPasswords();
+}
+
 async function deletePassword(passwordId) {
     if (!confirm('确认删除此密码？')) return;
 
@@ -1269,6 +1363,12 @@ function parseCsvLine(line) {
 }
 
 function csvToPasswords(text) {
+    // Strip BOM
+    if (text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1);
+    }
+    // Normalize line endings
+    text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     const lines = text.split('\n').filter(l => l.trim());
     if (lines.length < 2) return [];
 
@@ -1381,7 +1481,14 @@ async function doImportSheet(passwords) {
     try {
         const result = await post('/api/sheets/' + _currentSheetId + '/import', passwords);
         closeModal(null);
-        alert('导入完成：成功 ' + result.imported + ' 条' + (result.errors > 0 ? '，失败 ' + result.errors + ' 条' : ''));
+        let msg = '导入完成：成功 ' + result.imported + ' 条';
+        if (result.errors > 0) {
+            msg += '，失败 ' + result.errors + ' 条';
+            if (result.error_details && result.error_details.length > 0) {
+                msg += '\n\n失败详情：\n' + result.error_details.join('\n');
+            }
+        }
+        alert(msg);
         loadSheet(_currentSheetId);
     } catch (e) {
         alert('导入失败: ' + e.message);
@@ -1397,7 +1504,11 @@ function importBook() {
         if (!file) return;
         try {
             const text = await file.text();
-            const lines = text.split('\n').filter(l => l.trim());
+            // Strip BOM and normalize line endings
+            let csv = text;
+            if (csv.charCodeAt(0) === 0xFEFF) csv = csv.slice(1);
+            csv = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            const lines = csv.split('\n').filter(l => l.trim());
             if (lines.length < 2) { alert('CSV 为空'); return; }
 
             const headers = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase());
@@ -1446,7 +1557,14 @@ async function doImportBook(payload) {
     try {
         const result = await post('/api/books/' + _currentBookId + '/import', payload);
         closeModal(null);
-        alert('导入完成：成功 ' + result.imported + ' 条' + (result.errors > 0 ? '，失败 ' + result.errors + ' 条' : ''));
+        let msg = '导入完成：成功 ' + result.imported + ' 条';
+        if (result.errors > 0) {
+            msg += '，失败 ' + result.errors + ' 条';
+            if (result.error_details && result.error_details.length > 0) {
+                msg += '\n\n失败详情：\n' + result.error_details.join('\n');
+            }
+        }
+        alert(msg);
         loadBook(_currentBookId);
     } catch (e) {
         alert('导入失败: ' + e.message);

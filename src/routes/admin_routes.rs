@@ -94,7 +94,7 @@ pub async fn create_user(
                 id,
                 username: req.username.trim().to_string(),
                 role: role.to_string(),
-                created_at: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                created_at: (chrono::Utc::now() + chrono::Duration::hours(8)).format("%Y-%m-%d %H:%M:%S").to_string(),
             };
             Ok(Json(record))
         }

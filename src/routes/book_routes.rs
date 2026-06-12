@@ -106,7 +106,7 @@ pub async fn create_book(
         id: book_id,
         name: req.name.trim().to_string(),
         description: Some(description).filter(|d| !d.is_empty()),
-        created_at: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+        created_at: (chrono::Utc::now() + chrono::Duration::hours(8)).format("%Y-%m-%d %H:%M:%S").to_string(),
         created_by: user.id,
         member_count: 1,
         is_holder: true,
@@ -436,7 +436,8 @@ pub async fn search_book(
     let pattern = format!("%{}%", q);
 
     let mut stmt = conn.prepare(
-        "SELECT p.id, p.title, p.username, p.url, s.id as sheet_id, s.name as sheet_name
+        "SELECT p.id, p.title, p.username, p.url, s.id as sheet_id, s.name as sheet_name,
+                p.updated_at, COALESCE(p.updated_by_username, '')
          FROM passwords p
          JOIN sheets s ON p.sheet_id = s.id
          WHERE s.book_id = ?1
@@ -454,6 +455,8 @@ pub async fn search_book(
                 "url": row.get::<_, Option<String>>(3)?.unwrap_or_default(),
                 "sheet_id": row.get::<_, i64>(4)?,
                 "sheet_name": row.get::<_, String>(5)?,
+                "updated_at": row.get::<_, String>(6)?,
+                "updated_by_username": row.get::<_, String>(7)?,
             }))
         })
         .map_err(AppError::internal)?

@@ -1,6 +1,6 @@
 # ============================================================
 # Release workflow — triggered only by v-tag pushes
-# Builds for 6 targets: Linux / macOS / Windows × x86_64 / arm64
+# Builds for 5 targets: Linux x86_64 / Linux arm64 / macOS arm64 / Windows x86_64 / Windows arm64
 # ============================================================
 name: Release
 

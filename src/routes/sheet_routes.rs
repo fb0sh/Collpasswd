@@ -73,7 +73,7 @@ pub async fn create_sheet(
         book_id,
         name: req.name.trim().to_string(),
         description: Some(description).filter(|d| !d.is_empty()),
-        created_at: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+        created_at: (chrono::Utc::now() + chrono::Duration::hours(8)).format("%Y-%m-%d %H:%M:%S").to_string(),
         password_count: 0,
     }))
 }

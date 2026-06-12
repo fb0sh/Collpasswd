@@ -26,6 +26,12 @@ pub fn init_db(db_path: &Path) -> Result<DbPool> {
             .context("Failed to run migration 001")?;
         conn.execute_batch(include_str!("../migrations/002_audit_logs.sql"))
             .context("Failed to run migration 002")?;
+
+        // Migration 003: add updated_by columns to passwords (individual ALTER TABLE calls)
+        conn.execute_batch("ALTER TABLE passwords ADD COLUMN updated_by_user_id INTEGER DEFAULT NULL REFERENCES users(id);")
+            .ok(); // ignore if column already exists
+        conn.execute_batch("ALTER TABLE passwords ADD COLUMN updated_by_username TEXT DEFAULT '';")
+            .ok(); // ignore if column already exists
     }
 
     Ok(pool)

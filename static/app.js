@@ -767,7 +767,7 @@ function filterBookPasswords() {
         count.textContent = matches.length + ' 条匹配 "' + q + '"';
 
         if (matches.length === 0) {
-            body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">无匹配结果</td></tr>';
+            body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">无匹配结果</td></tr>';
             resultsEl.style.display = 'block';
             return;
         }
@@ -787,6 +787,8 @@ function filterBookPasswords() {
                         <button class="btn-reveal" onclick="searchCopyPassword(${p.sheet_id},${p.id})" id="search-btn-copy-${pwId}">复制</button>
                     </span>
                 </td>
+                <td class="cell-mono" style="font-size:11px">${p.updated_at ? p.updated_at.replace(/(\d{4}-\d{2}-\d{2})T?(\d{2}:\d{2}).*$/, '$1 $2') : '—'}</td>
+                <td style="font-size:11px;color:var(--text2)">${escapeHtml(p.updated_by_username || '') || '<span class="cell-empty">—</span>'}</td>
                 <td style="text-align:right;white-space:nowrap">
                     <button class="btn btn-sm" onclick="showEditPasswordFromSearch(${p.id}, ${p.sheet_id})">编辑</button>
                 </td>
@@ -795,7 +797,7 @@ function filterBookPasswords() {
 
         resultsEl.style.display = 'block';
     }).catch(e => {
-        body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">搜索失败</td></tr>';
+        body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">搜索失败</td></tr>';
         resultsEl.style.display = 'block';
     });
 }
@@ -934,7 +936,7 @@ async function loadSheet(sheetId, canEdit) {
     document.getElementById('btn-import-sheet').style.display = _currentSheetCanEdit ? 'inline-block' : 'none';
 
     // Loading state
-    el.innerHTML = '<tr><td colspan="4" class="loading">加载中</td></tr>';
+    el.innerHTML = '<tr><td colspan="7" class="loading">加载中</td></tr>';
 
     try {
         const passwords = await get('/api/sheets/' + sheetId + '/passwords');
@@ -964,13 +966,13 @@ async function loadSheet(sheetId, canEdit) {
         `;
 
         if (passwords.length === 0) {
-            el.innerHTML = '<tr><td colspan="4" class="empty-state">' + (_currentSheetCanEdit ? '暂无密码，点击上方按钮添加' : '暂无密码') + '</td></tr>';
+            el.innerHTML = '<tr><td colspan="7" class="empty-state">' + (_currentSheetCanEdit ? '暂无密码，点击上方按钮添加' : '暂无密码') + '</td></tr>';
             return;
         }
 
         renderPasswordRows(passwords);
     } catch (e) {
-        el.innerHTML = '<tr><td colspan="4" class="empty-state">加载失败: ' + escapeHtml(e.message) + '</td></tr>';
+        el.innerHTML = '<tr><td colspan="7" class="empty-state">加载失败: ' + escapeHtml(e.message) + '</td></tr>';
         statsEl.innerHTML = '';
     }
 }
@@ -1001,6 +1003,8 @@ function renderPasswordRows(passwords) {
                     <button class="btn-reveal" onclick="copyPassword(${p.id})" id="btn-copy-${p.id}">复制</button>
                 </span>
             </td>
+            <td class="cell-mono" style="font-size:11px">${p.updated_at ? p.updated_at.replace(/(\d{4}-\d{2}-\d{2})T?(\d{2}:\d{2}).*$/, '$1 $2') : '—'}</td>
+            <td style="font-size:11px;color:var(--text2)">${escapeHtml(p.updated_by_username || '') || '<span class="cell-empty">—</span>'}</td>
             <td style="text-align:right;white-space:nowrap">
                 ${_currentSheetCanEdit ? `<button class="btn btn-sm" onclick="showEditPassword(${p.id})">编辑</button><button class="btn btn-sm btn-danger" onclick="deletePassword(${p.id})" style="margin-left:4px">删除</button>` : ''}
             </td>

@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     username TEXT NOT NULL,
     action TEXT NOT NULL,  -- 'view_password' | 'create_password' | 'update_password' | 'delete_password'
     detail TEXT DEFAULT '', -- JSON with extra context (e.g. password title)
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now', '+8 hours'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_audit_logs_book ON audit_logs(book_id);

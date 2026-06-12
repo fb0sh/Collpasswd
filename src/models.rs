@@ -118,8 +118,8 @@ pub struct PasswordEntry {
     pub username: Option<String>,
     pub url: Option<String>,
     pub notes: Option<String>,
-    pub created_at: String,
     pub updated_at: String,
+    pub updated_by_username: String,
     /// encrypted_password is NEVER included in list responses
     pub has_password: bool,
 }
@@ -133,8 +133,8 @@ pub struct PasswordDetail {
     pub password: String,
     pub url: Option<String>,
     pub notes: Option<String>,
-    pub created_at: String,
     pub updated_at: String,
+    pub updated_by_username: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

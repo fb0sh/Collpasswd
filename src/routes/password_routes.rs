@@ -28,10 +28,10 @@ pub async fn list_passwords(
     check_book_access(&conn, book_id, user.id)?;
 
     let mut stmt = conn.prepare(
-        "SELECT id, sheet_id, title, username, url, notes, created_at, updated_at
+        "SELECT id, sheet_id, title, username, url, notes, updated_at, COALESCE(updated_by_username, '')
          FROM passwords
          WHERE sheet_id = ?1
-         ORDER BY created_at DESC",
+         ORDER BY updated_at DESC",
     ).map_err(AppError::internal)?;
 
     let passwords = stmt
@@ -43,8 +43,8 @@ pub async fn list_passwords(
                 username: row.get::<_, Option<String>>(3)?.filter(|s| !s.is_empty()),
                 url: row.get::<_, Option<String>>(4)?.filter(|s| !s.is_empty()),
                 notes: row.get::<_, Option<String>>(5)?.filter(|s| !s.is_empty()),
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
+                updated_at: row.get(6)?,
+                updated_by_username: row.get(7)?,
                 has_password: true,
             })
         })
@@ -80,10 +80,10 @@ pub async fn get_password(
         )
         .map_err(|_| AppError::not_found("Book not found"))?;
 
-    let (id, sheet_id_val, title, username, encrypted_pass, url, notes, created_at, updated_at): (
+    let (id, sheet_id_val, title, username, encrypted_pass, url, notes, updated_at, updated_by_username): (
         i64, i64, String, Option<String>, String, Option<String>, Option<String>, String, String
     ) = conn.query_row(
-        "SELECT id, sheet_id, title, username, encrypted_password, url, notes, created_at, updated_at
+        "SELECT id, sheet_id, title, username, encrypted_password, url, notes, updated_at, COALESCE(updated_by_username, '')
          FROM passwords WHERE id = ?1 AND sheet_id = ?2",
         rusqlite::params![password_id, sheet_id],
         |row| {
@@ -129,8 +129,8 @@ pub async fn get_password(
         password: password_str,
         url: url.filter(|s| !s.is_empty()),
         notes: notes.filter(|s| !s.is_empty()),
-        created_at,
         updated_at,
+        updated_by_username,
     }))
 }
 
@@ -182,8 +182,8 @@ pub async fn create_password(
     let notes = req.notes.unwrap_or_default();
 
     conn.execute(
-        "INSERT INTO passwords (sheet_id, title, username, encrypted_password, url, notes) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        rusqlite::params![sheet_id, req.title.trim(), username, encrypted, url, notes],
+        "INSERT INTO passwords (sheet_id, title, username, encrypted_password, url, notes, updated_by_user_id, updated_by_username, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, datetime('now', '+8 hours'))",
+        rusqlite::params![sheet_id, req.title.trim(), username, encrypted, url, notes, user.id, &user.username],
     ).map_err(AppError::internal)?;
 
     let password_id = conn.last_insert_rowid();
@@ -270,7 +270,11 @@ pub async fn update_password(
         )
         .map_err(|_| AppError::not_found("Password not found"))?;
 
-    updates.push("updated_at = datetime('now')");
+    updates.push("updated_at = datetime('now', '+8 hours')");
+    updates.push("updated_by_user_id = ?");
+    params.push(Box::new(user.id));
+    updates.push("updated_by_username = ?");
+    params.push(Box::new(user.username.clone()));
     params.push(Box::new(password_id));
 
     let sql = format!(

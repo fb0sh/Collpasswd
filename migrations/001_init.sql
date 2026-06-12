@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'user',
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now', '+8 hours'))
 );
 
 -- Books (projects) - each book has its own ECC key pair
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS books (
     description TEXT DEFAULT '',
     ecc_private_key TEXT NOT NULL,
     ecc_public_key TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now', '+8 hours')),
     created_by INTEGER NOT NULL REFERENCES users(id)
 );
 
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS sheets (
     book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     description TEXT DEFAULT '',
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now', '+8 hours'))
 );
 
 -- Passwords (entries in a sheet) - password is encrypted with the book's ECC public key
@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS passwords (
     encrypted_password TEXT NOT NULL,
     url TEXT DEFAULT '',
     notes TEXT DEFAULT '',
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now', '+8 hours')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now', '+8 hours'))
 );
 
 -- Config (key-value store for runtime settings)

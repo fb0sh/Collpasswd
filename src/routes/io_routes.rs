@@ -219,8 +219,8 @@ pub async fn import_sheet(
                 let notes = entry.notes.as_deref().unwrap_or("");
 
                 if let Ok(_) = conn.execute(
-                    "INSERT INTO passwords (sheet_id, title, username, encrypted_password, url, notes) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                    rusqlite::params![sheet_id, entry.title.trim(), username, encrypted, url, notes],
+                    "INSERT INTO passwords (sheet_id, title, username, encrypted_password, url, notes, updated_by_user_id, updated_by_username, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, datetime('now', '+8 hours'))",
+                    rusqlite::params![sheet_id, entry.title.trim(), username, encrypted, url, notes, user.id, &user.username],
                 ) {
                     let pid = conn.last_insert_rowid();
                     log_action(&conn, book_id, Some(sheet_id), Some(pid), user.id, &user.username, "create_password", &format!("{}：{}", entry.title, username));
@@ -302,8 +302,8 @@ pub async fn import_book(
                     let notes = entry.notes.as_deref().unwrap_or("");
 
                     if let Ok(_) = conn.execute(
-                        "INSERT INTO passwords (sheet_id, title, username, encrypted_password, url, notes) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                        rusqlite::params![sheet_id, entry.title.trim(), username, encrypted, url, notes],
+                        "INSERT INTO passwords (sheet_id, title, username, encrypted_password, url, notes, updated_by_user_id, updated_by_username, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, datetime('now', '+8 hours'))",
+                        rusqlite::params![sheet_id, entry.title.trim(), username, encrypted, url, notes, user.id, &user.username],
                     ) {
                         let pid = conn.last_insert_rowid();
                         log_action(&conn, book_id, Some(sheet_id), Some(pid), user.id, &user.username, "create_password", &format!("{}：{}", entry.title, username));

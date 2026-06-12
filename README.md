@@ -33,10 +33,10 @@ CollPasswd 的设计围绕三个核心原则：
 - **内建 TLS** — 启动时自动生成自签名证书，无需额外配置
 - **多用户协作** — 以"项目(Book)"为单位共享密码，支持细粒度权限
 - **审计日志** — 记录所有密码查看/添加/修改/删除操作
-- **导入导出** — 项目和表级别的 CSV 导入/导出，支持 Excel 兼容的 UTF-8 BOM
-- **导入预览** — CSV 导入前预览数据，确认无误后再写入
+- **导入导出 (XLSX)** — 项目和表级别的 Excel (.xlsx) 导入/导出
+- **导入预览** — XLSX 上传后先预览数据，确认无误后再写入
 - **导入错误详情** — 失败逐条显示原因（标题为空/密码为空/加密失败等）
-- **下载导入模板** — 一键下载 CSV 模板，按模板填写即可快捷导入
+- **下载导入模板** — 一键下载 XLSX 模板，按模板填写即可快捷导入
 - **批量选择删除** — 密码列表和搜索结果中支持多选 + 全选，一键批量删除
 - **自助注册** — 用户可自行注册账号，由项目所有者分配权限
 - **密码内存安全** — 密码仅在显示在界面时短暂存在于浏览器内存中，操作完成后立即清除
@@ -273,10 +273,14 @@ cargo build --release
 
 | 方法 | 路径 | 格式 | 说明 |
 |---|---|---|---|
-| GET | `/api/sheets/:id/export` | CSV | 导出表（解密后明文）：`title,username,password,url,notes` |
-| GET | `/api/books/:id/export` | CSV | 导出项目：`sheet,title,username,password,url,notes` |
-| POST | `/api/sheets/:id/import` | CSV | 导入到表 |
-| POST | `/api/books/:id/import` | CSV | 导入到项目（按 sheet 列自动匹配/创建表） |
+| GET | `/api/sheets/:id/export-xlsx` | XLSX | 导出表（解密后明文） |
+| GET | `/api/books/:id/export-xlsx` | XLSX | 导出项目（每个 sheet 一个工作表） |
+| POST | `/api/sheets/:id/import` | JSON | 导入到表（来自预览确认后提交） |
+| POST | `/api/books/:id/import` | JSON | 导入到项目（来自预览确认后提交） |
+| POST | `/api/sheets/:id/preview-xlsx` | XLSX (multipart) | 上传 XLSX，解析后返回 JSON 预览 |
+| POST | `/api/books/:id/preview-xlsx` | XLSX (multipart) | 上传 XLSX，解析后返回按表分组的预览 |
+| GET | `/api/template/sheet-xlsx` | XLSX | 下载单表导入模板 |
+| GET | `/api/template/book-xlsx` | XLSX | 下载项目导入模板（含多表） |
 
 ### 审计
 
@@ -294,6 +298,7 @@ cargo build --release
 | 后端 | Rust + Axum |
 | 数据库 | SQLite (r2d2 连接池) |
 | 加密 | `p256` (ECDH) + `aes-gcm` + `hkdf` + `argon2` |
+| Excel | `calamine` (解析) + `rust_xlsxwriter` (生成) |
 | 认证 | JWT (24h 有效期，密钥每次重启随机生成) |
 | 前端 | 纯 JavaScript SPA（无框架） |
 | 前端路由 | History API (pushState)，支持浏览器前进/后退/刷新 |

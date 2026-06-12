@@ -311,8 +311,14 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/admin/settings", get(routes::admin_routes::get_settings).put(routes::admin_routes::update_settings))
         .route("/api/sheets/:id/export", get(routes::io_routes::export_sheet))
         .route("/api/books/:id/export", get(routes::io_routes::export_book))
+        .route("/api/sheets/:id/export-xlsx", get(routes::io_routes::export_sheet_xlsx))
+        .route("/api/books/:id/export-xlsx", get(routes::io_routes::export_book_xlsx))
         .route("/api/sheets/:id/import", post(routes::io_routes::import_sheet))
         .route("/api/books/:id/import", post(routes::io_routes::import_book))
+        .route("/api/sheets/:id/preview-xlsx", post(routes::io_routes::preview_sheet_xlsx))
+        .route("/api/books/:id/preview-xlsx", post(routes::io_routes::preview_book_xlsx))
+        .route("/api/template/sheet-xlsx", get(routes::io_routes::template_sheet_xlsx))
+        .route("/api/template/book-xlsx", get(routes::io_routes::template_book_xlsx))
         .layer(cors)
         .with_state(state);
 

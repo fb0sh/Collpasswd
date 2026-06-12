@@ -1313,97 +1313,14 @@ async function updatePassword(passwordId) {
     }
 }
 
-// ─── Import / Export (CSV) ─────────────────────────────────────────────────
-
-function csvEscape(val) {
-    if (val == null) return '';
-    const s = String(val);
-    if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
-        return '"' + s.replace(/"/g, '""') + '"';
-    }
-    return s;
-}
-
-function passwordsToCsv(passwords) {
-    const header = 'title,username,password,url,notes';
-    const rows = passwords.map(p =>
-        [csvEscape(p.title), csvEscape(p.username), csvEscape(p.password), csvEscape(p.url), csvEscape(p.notes)].join(',')
-    );
-    return header + '\n' + rows.join('\n');
-}
-
-function parseCsvLine(line) {
-    const result = [];
-    let current = '';
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (inQuotes) {
-            if (ch === '"' && i + 1 < line.length && line[i + 1] === '"') {
-                current += '"';
-                i++;
-            } else if (ch === '"') {
-                inQuotes = false;
-            } else {
-                current += ch;
-            }
-        } else {
-            if (ch === '"') {
-                inQuotes = true;
-            } else if (ch === ',') {
-                result.push(current);
-                current = '';
-            } else {
-                current += ch;
-            }
-        }
-    }
-    result.push(current);
-    return result;
-}
-
-function csvToPasswords(text) {
-    // Strip BOM
-    if (text.charCodeAt(0) === 0xFEFF) {
-        text = text.slice(1);
-    }
-    // Normalize line endings
-    text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    const lines = text.split('\n').filter(l => l.trim());
-    if (lines.length < 2) return [];
-
-    const headers = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase());
-    const titleIdx = headers.indexOf('title');
-    const userIdx = headers.indexOf('username');
-    const passIdx = headers.indexOf('password');
-    const urlIdx = headers.indexOf('url');
-    const notesIdx = headers.indexOf('notes');
-
-    if (titleIdx === -1 || passIdx === -1) {
-        throw new Error('CSV 必须包含 title 和 password 列');
-    }
-
-    const result = [];
-    for (let i = 1; i < lines.length; i++) {
-        const cols = parseCsvLine(lines[i]);
-        result.push({
-            title: (cols[titleIdx] || '').trim(),
-            username: userIdx >= 0 ? (cols[userIdx] || '').trim() || null : null,
-            password: (cols[passIdx] || '').trim(),
-            url: urlIdx >= 0 ? (cols[urlIdx] || '').trim() || null : null,
-            notes: notesIdx >= 0 ? (cols[notesIdx] || '').trim() || null : null,
-        });
-    }
-    return result;
-}
+// ─── Import / Export (XLSX) ─────────────────────────────────────────────────
 
 // ─── Export ─────────────────────────────────────────────────────────────────
 
 async function exportSheet() {
     try {
-        const data = await get('/api/sheets/' + _currentSheetId + '/export');
-        const csv = '\uFEFF' + passwordsToCsv(data);
-        downloadFile(csv, 'sheet-' + _currentSheetId + '-passwords.csv', 'text/csv');
+        const blob = await fetchWithAuth('/api/sheets/' + _currentSheetId + '/export-xlsx');
+        downloadBlob(await blob.arrayBuffer(), 'sheet-' + _currentSheetId + '-passwords.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     } catch (e) {
         alert('导出失败: ' + e.message);
     }
@@ -1411,22 +1328,15 @@ async function exportSheet() {
 
 async function exportBook() {
     try {
-        const data = await get('/api/books/' + _currentBookId + '/export');
-        let csv = '\uFEFFsheet,title,username,password,url,notes\n';
-        for (const sheet of data) {
-            const sname = csvEscape(sheet.sheet_name);
-            for (const p of sheet.passwords) {
-                csv += sname + ',' + [csvEscape(p.title), csvEscape(p.username), csvEscape(p.password), csvEscape(p.url), csvEscape(p.notes)].join(',') + '\n';
-            }
-        }
-        downloadFile(csv, 'project-' + _currentBookId + '-passwords.csv', 'text/csv');
+        const blob = await fetchWithAuth('/api/books/' + _currentBookId + '/export-xlsx');
+        downloadBlob(await blob.arrayBuffer(), 'project-' + _currentBookId + '-passwords.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     } catch (e) {
         alert('导出失败: ' + e.message);
     }
 }
 
-function downloadFile(content, filename, mime) {
-    const blob = new Blob([content], { type: mime + ';charset=utf-8' });
+function downloadBlob(data, filename, mime) {
+    const blob = new Blob([data], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -1438,38 +1348,46 @@ function downloadFile(content, filename, mime) {
 // ─── Download Import Template ──────────────────────────────────────────────
 
 function downloadSheetTemplate() {
-    const csv = '\uFEFFtitle,username,password,url,notes\n' +
-        '生产服务器 SSH,root,YourPasswordHere,192.168.1.1,root 用户\n' +
-        '测试服务器,admin,AnotherPassword,10.0.0.1,开发环境\n';
-    downloadFile(csv, 'import-template-sheet.csv', 'text/csv');
+    fetchWithAuth('/api/template/sheet-xlsx').then(blob => {
+        downloadBlob(blob, 'import-template-sheet.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }).catch(e => alert('下载失败: ' + e.message));
 }
 
 function downloadBookTemplate() {
-    const csv = '\uFEFFsheet,title,username,password,url,notes\n' +
-        '服务器密码,生产服务器 SSH,root,YourPasswordHere,192.168.1.1,root 用户\n' +
-        '服务器密码,测试服务器,admin,AnotherPassword,10.0.0.1,开发环境\n' +
-        '数据库密码,MySQL 生产,dbadmin,DBPass123,db01.example.com,主库\n';
-    downloadFile(csv, 'import-template-project.csv', 'text/csv');
+    fetchWithAuth('/api/template/book-xlsx').then(blob => {
+        downloadBlob(blob, 'import-template-project.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }).catch(e => alert('下载失败: ' + e.message));
 }
 
-// ─── Import with Preview ───────────────────────────────────────────────────
+async function fetchWithAuth(url) {
+    const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + state.token } });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error || '下载失败'); }
+    return await res.blob();
+}
 
-function importSheet() {
+// ─── Import with Preview (XLSX → Backend Parse) ────────────────────────────
+
+function uploadAndPreview(apiPath, type) {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.csv';
+    input.accept = '.xlsx,.xls';
     input.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         try {
-            const text = await file.text();
-            const passwords = csvToPasswords(text);
-            if (passwords.length === 0) {
-                alert('CSV 中没有有效数据（需要 title 和 password 列）');
-                return;
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await fetch(apiPath, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + state.token },
+                body: formData,
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || '请求失败');
             }
-            // Show preview modal
-            showImportPreviewModal(passwords, 'sheet', () => doImportSheet(passwords));
+            const data = await res.json();
+            showImportPreviewModal(data, type, () => doImport(type, data));
         } catch (e) {
             alert('解析失败: ' + e.message);
         }
@@ -1477,85 +1395,20 @@ function importSheet() {
     input.click();
 }
 
-async function doImportSheet(passwords) {
-    try {
-        const result = await post('/api/sheets/' + _currentSheetId + '/import', passwords);
-        closeModal(null);
-        let msg = '导入完成：成功 ' + result.imported + ' 条';
-        if (result.errors > 0) {
-            msg += '，失败 ' + result.errors + ' 条';
-            if (result.error_details && result.error_details.length > 0) {
-                msg += '\n\n失败详情：\n' + result.error_details.join('\n');
-            }
-        }
-        alert(msg);
-        loadSheet(_currentSheetId);
-    } catch (e) {
-        alert('导入失败: ' + e.message);
-    }
+function importSheet() {
+    uploadAndPreview('/api/sheets/' + _currentSheetId + '/preview-xlsx', 'sheet');
 }
 
 function importBook() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv';
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        try {
-            const text = await file.text();
-            // Strip BOM and normalize line endings
-            let csv = text;
-            if (csv.charCodeAt(0) === 0xFEFF) csv = csv.slice(1);
-            csv = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-            const lines = csv.split('\n').filter(l => l.trim());
-            if (lines.length < 2) { alert('CSV 为空'); return; }
-
-            const headers = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase());
-            const sheetIdx = headers.indexOf('sheet');
-            const titleIdx = headers.indexOf('title');
-            const passIdx = headers.indexOf('password');
-            const userIdx = headers.indexOf('username');
-            const urlIdx = headers.indexOf('url');
-            const notesIdx = headers.indexOf('notes');
-
-            if (sheetIdx === -1 || titleIdx === -1 || passIdx === -1) {
-                alert('CSV 必须包含 sheet、title、password 列');
-                return;
-            }
-
-            // Group by sheet
-            const sheetMap = {};
-            for (let i = 1; i < lines.length; i++) {
-                const cols = parseCsvLine(lines[i]);
-                const sheetName = (cols[sheetIdx] || '').trim() || '导入的密码';
-                if (!sheetMap[sheetName]) sheetMap[sheetName] = [];
-                sheetMap[sheetName].push({
-                    title: (cols[titleIdx] || '').trim(),
-                    username: userIdx >= 0 ? (cols[userIdx] || '').trim() || null : null,
-                    password: (cols[passIdx] || '').trim(),
-                    url: urlIdx >= 0 ? (cols[urlIdx] || '').trim() || null : null,
-                    notes: notesIdx >= 0 ? (cols[notesIdx] || '').trim() || null : null,
-                });
-            }
-
-            const payload = Object.entries(sheetMap).map(([sheetName, passwords]) => ({
-                sheet_name: sheetName,
-                passwords,
-            }));
-
-            // Show grouped preview
-            showImportPreviewModal(payload, 'book', () => doImportBook(payload));
-        } catch (e) {
-            alert('解析失败: ' + e.message);
-        }
-    };
-    input.click();
+    uploadAndPreview('/api/books/' + _currentBookId + '/preview-xlsx', 'book');
 }
 
-async function doImportBook(payload) {
+async function doImport(type, data) {
     try {
-        const result = await post('/api/books/' + _currentBookId + '/import', payload);
+        const apiPath = type === 'book'
+            ? '/api/books/' + _currentBookId + '/import'
+            : '/api/sheets/' + _currentSheetId + '/import';
+        const result = await post(apiPath, data);
         closeModal(null);
         let msg = '导入完成：成功 ' + result.imported + ' 条';
         if (result.errors > 0) {
@@ -1565,7 +1418,8 @@ async function doImportBook(payload) {
             }
         }
         alert(msg);
-        loadBook(_currentBookId);
+        if (type === 'book') loadBook(_currentBookId);
+        else loadSheet(_currentSheetId);
     } catch (e) {
         alert('导入失败: ' + e.message);
     }

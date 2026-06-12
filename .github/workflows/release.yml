@@ -38,11 +38,6 @@ jobs:
             ar: aarch64-linux-gnu-ar
 
           # ── macOS ──────────────────────────────────────────
-          - os: macos-13
-            target: x86_64-apple-darwin
-            pkg_suffix: x86_64-macos
-            pkg_type: tar.gz
-
           - os: macos-latest
             target: aarch64-apple-darwin
             pkg_suffix: aarch64-macos
@@ -106,7 +101,7 @@ jobs:
         run: |
           BIN="collpasswd-${{ github.ref_name }}-${{ matrix.pkg_suffix }}${{ matrix.ext }}"
           cp "target/${{ matrix.target }}/release/collpasswd${{ matrix.ext }}"  "$BIN"
-          zip "$BIN.zip" "$BIN"
+          7z a -tzip "$BIN.zip" "$BIN"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

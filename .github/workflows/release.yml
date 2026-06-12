@@ -47,14 +47,12 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             pkg_suffix: x86_64-windows
-            pkg_type: zip
-            ext: .exe
+            pkg_type: exe
 
           - os: windows-latest
             target: aarch64-pc-windows-msvc
             pkg_suffix: aarch64-windows
-            pkg_type: zip
-            ext: .exe
+            pkg_type: exe
 
     steps:
       - name: Checkout
@@ -95,13 +93,12 @@ jobs:
           cp "target/${{ matrix.target }}/release/collpasswd"  "$BIN"
           tar czf "$BIN.tar.gz" "$BIN"
 
-      - name: Package (zip)
-        if: matrix.pkg_type == 'zip'
+      - name: Package (exe)
+        if: matrix.pkg_type == 'exe'
         shell: bash
         run: |
-          BIN="collpasswd-${{ github.ref_name }}-${{ matrix.pkg_suffix }}${{ matrix.ext }}"
-          cp "target/${{ matrix.target }}/release/collpasswd${{ matrix.ext }}"  "$BIN"
-          7z a -tzip "$BIN.zip" "$BIN"
+          BIN="collpasswd-${{ github.ref_name }}-${{ matrix.pkg_suffix }}.exe"
+          cp "target/${{ matrix.target }}/release/collpasswd.exe"  "$BIN"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

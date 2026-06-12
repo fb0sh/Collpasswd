@@ -80,6 +80,7 @@
                         <div style="display:flex;gap:6px">
                             <button id="btn-export-book" class="btn btn-sm" style="display:none" onclick="exportBook()">导出项目</button>
                             <button id="btn-import-book" class="btn btn-sm" style="display:none" onclick="importBook()">导入项目</button>
+                            <button id="btn-template-book" class="btn btn-sm" style="display:none" onclick="downloadBookTemplate()" title="下载导入模板">模板</button>
                             <button id="btn-edit-book" class="btn btn-sm" style="display:none" onclick="showEditBook()">编辑</button>
                             <button id="btn-delete-book" class="btn btn-sm btn-danger" style="display:none" onclick="deleteCurrentBook()">删除项目</button>
                             <button id="btn-create-sheet" class="btn btn-sm" onclick="showCreateSheet()">+ 新表</button>
@@ -142,6 +143,7 @@
                         <div style="display:flex;gap:6px">
                             <button id="btn-export-sheet" class="btn btn-sm" onclick="exportSheet()">导出</button>
                             <button id="btn-import-sheet" class="btn btn-sm" onclick="importSheet()">导入</button>
+                            <button class="btn btn-sm" onclick="downloadSheetTemplate()" title="下载导入模板">模板</button>
                             <button id="btn-create-password" class="btn btn-sm" onclick="showCreatePassword()">+ 新密码</button>
                         </div>
                     </div>

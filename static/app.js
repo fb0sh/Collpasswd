@@ -655,6 +655,7 @@ async function loadBook(bookId) {
         document.getElementById('btn-create-sheet').style.display = canEdit ? 'inline-block' : 'none';
         document.getElementById('btn-export-book').style.display = canEdit ? 'inline-block' : 'none';
         document.getElementById('btn-import-book').style.display = canEdit ? 'inline-block' : 'none';
+        document.getElementById('btn-template-book').style.display = canEdit ? 'inline-block' : 'none';
 
         if (sheets.length === 0) {
             el.innerHTML = '<div class="empty-state">' + (canEdit ? '暂无密码表，点击上方按钮创建' : '暂无密码表') + '</div>';
@@ -1230,7 +1231,6 @@ function csvEscape(val) {
 }
 
 function passwordsToCsv(passwords) {
-    // passwords: array of { title, username, password, url, notes }
     const header = 'title,username,password,url,notes';
     const rows = passwords.map(p =>
         [csvEscape(p.title), csvEscape(p.username), csvEscape(p.password), csvEscape(p.url), csvEscape(p.notes)].join(',')
@@ -1238,40 +1238,39 @@ function passwordsToCsv(passwords) {
     return header + '\n' + rows.join('\n');
 }
 
+function parseCsvLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inQuotes) {
+            if (ch === '"' && i + 1 < line.length && line[i + 1] === '"') {
+                current += '"';
+                i++;
+            } else if (ch === '"') {
+                inQuotes = false;
+            } else {
+                current += ch;
+            }
+        } else {
+            if (ch === '"') {
+                inQuotes = true;
+            } else if (ch === ',') {
+                result.push(current);
+                current = '';
+            } else {
+                current += ch;
+            }
+        }
+    }
+    result.push(current);
+    return result;
+}
+
 function csvToPasswords(text) {
     const lines = text.split('\n').filter(l => l.trim());
     if (lines.length < 2) return [];
-    // Parse header
-    // Simple CSV parser (handles quoted fields)
-    function parseCsvLine(line) {
-        const result = [];
-        let current = '';
-        let inQuotes = false;
-        for (let i = 0; i < line.length; i++) {
-            const ch = line[i];
-            if (inQuotes) {
-                if (ch === '"' && i + 1 < line.length && line[i + 1] === '"') {
-                    current += '"';
-                    i++;
-                } else if (ch === '"') {
-                    inQuotes = false;
-                } else {
-                    current += ch;
-                }
-            } else {
-                if (ch === '"') {
-                    inQuotes = true;
-                } else if (ch === ',') {
-                    result.push(current);
-                    current = '';
-                } else {
-                    current += ch;
-                }
-            }
-        }
-        result.push(current);
-        return result;
-    }
 
     const headers = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase());
     const titleIdx = headers.indexOf('title');
@@ -1298,11 +1297,12 @@ function csvToPasswords(text) {
     return result;
 }
 
+// ─── Export ─────────────────────────────────────────────────────────────────
+
 async function exportSheet() {
     try {
         const data = await get('/api/sheets/' + _currentSheetId + '/export');
-        // data is array of { title, username, password, url, notes }
-        const csv = passwordsToCsv(data);
+        const csv = '\uFEFF' + passwordsToCsv(data);
         downloadFile(csv, 'sheet-' + _currentSheetId + '-passwords.csv', 'text/csv');
     } catch (e) {
         alert('导出失败: ' + e.message);
@@ -1312,8 +1312,7 @@ async function exportSheet() {
 async function exportBook() {
     try {
         const data = await get('/api/books/' + _currentBookId + '/export');
-        // data is array of { sheet_name, sheet_id, passwords: [...] }
-        let csv = 'sheet,title,username,password,url,notes\n';
+        let csv = '\uFEFFsheet,title,username,password,url,notes\n';
         for (const sheet of data) {
             const sname = csvEscape(sheet.sheet_name);
             for (const p of sheet.passwords) {
@@ -1336,6 +1335,25 @@ function downloadFile(content, filename, mime) {
     URL.revokeObjectURL(url);
 }
 
+// ─── Download Import Template ──────────────────────────────────────────────
+
+function downloadSheetTemplate() {
+    const csv = '\uFEFFtitle,username,password,url,notes\n' +
+        '生产服务器 SSH,root,YourPasswordHere,192.168.1.1,root 用户\n' +
+        '测试服务器,admin,AnotherPassword,10.0.0.1,开发环境\n';
+    downloadFile(csv, 'import-template-sheet.csv', 'text/csv');
+}
+
+function downloadBookTemplate() {
+    const csv = '\uFEFFsheet,title,username,password,url,notes\n' +
+        '服务器密码,生产服务器 SSH,root,YourPasswordHere,192.168.1.1,root 用户\n' +
+        '服务器密码,测试服务器,admin,AnotherPassword,10.0.0.1,开发环境\n' +
+        '数据库密码,MySQL 生产,dbadmin,DBPass123,db01.example.com,主库\n';
+    downloadFile(csv, 'import-template-project.csv', 'text/csv');
+}
+
+// ─── Import with Preview ───────────────────────────────────────────────────
+
 function importSheet() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -1350,14 +1368,24 @@ function importSheet() {
                 alert('CSV 中没有有效数据（需要 title 和 password 列）');
                 return;
             }
-            const result = await post('/api/sheets/' + _currentSheetId + '/import', passwords);
-            alert('导入完成：成功 ' + result.imported + ' 条' + (result.errors > 0 ? '，失败 ' + result.errors + ' 条' : ''));
-            loadSheet(_currentSheetId);
+            // Show preview modal
+            showImportPreviewModal(passwords, 'sheet', () => doImportSheet(passwords));
         } catch (e) {
-            alert('导入失败: ' + e.message);
+            alert('解析失败: ' + e.message);
         }
     };
     input.click();
+}
+
+async function doImportSheet(passwords) {
+    try {
+        const result = await post('/api/sheets/' + _currentSheetId + '/import', passwords);
+        closeModal(null);
+        alert('导入完成：成功 ' + result.imported + ' 条' + (result.errors > 0 ? '，失败 ' + result.errors + ' 条' : ''));
+        loadSheet(_currentSheetId);
+    } catch (e) {
+        alert('导入失败: ' + e.message);
+    }
 }
 
 function importBook() {
@@ -1369,29 +1397,8 @@ function importBook() {
         if (!file) return;
         try {
             const text = await file.text();
-            // Parse multi-sheet CSV (first column = sheet name)
             const lines = text.split('\n').filter(l => l.trim());
             if (lines.length < 2) { alert('CSV 为空'); return; }
-
-            function parseCsvLine(line) {
-                const result = [];
-                let current = '';
-                let inQuotes = false;
-                for (let i = 0; i < line.length; i++) {
-                    const ch = line[i];
-                    if (inQuotes) {
-                        if (ch === '"' && i + 1 < line.length && line[i + 1] === '"') { current += '"'; i++; }
-                        else if (ch === '"') { inQuotes = false; }
-                        else { current += ch; }
-                    } else {
-                        if (ch === '"') { inQuotes = true; }
-                        else if (ch === ',') { result.push(current); current = ''; }
-                        else { current += ch; }
-                    }
-                }
-                result.push(current);
-                return result;
-            }
 
             const headers = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase());
             const sheetIdx = headers.indexOf('sheet');
@@ -1421,20 +1428,86 @@ function importBook() {
                 });
             }
 
-            // Build import payload
             const payload = Object.entries(sheetMap).map(([sheetName, passwords]) => ({
                 sheet_name: sheetName,
                 passwords,
             }));
 
-            const result = await post('/api/books/' + _currentBookId + '/import', payload);
-            alert('导入完成：成功 ' + result.imported + ' 条' + (result.errors > 0 ? '，失败 ' + result.errors + ' 条' : ''));
-            loadBook(_currentBookId);
+            // Show grouped preview
+            showImportPreviewModal(payload, 'book', () => doImportBook(payload));
         } catch (e) {
-            alert('导入失败: ' + e.message);
+            alert('解析失败: ' + e.message);
         }
     };
     input.click();
+}
+
+async function doImportBook(payload) {
+    try {
+        const result = await post('/api/books/' + _currentBookId + '/import', payload);
+        closeModal(null);
+        alert('导入完成：成功 ' + result.imported + ' 条' + (result.errors > 0 ? '，失败 ' + result.errors + ' 条' : ''));
+        loadBook(_currentBookId);
+    } catch (e) {
+        alert('导入失败: ' + e.message);
+    }
+}
+
+// ─── Import Preview Modal ──────────────────────────────────────────────────
+
+function escapeHtmlForTable(str) {
+    if (!str) return '<span class="cell-empty">—</span>';
+    return escapeHtml(String(str).substring(0, 50));
+}
+
+function showImportPreviewModal(data, type, onConfirm) {
+    let html = `<h3>导入预览</h3>`;
+    html += `<p style="color:var(--text3);font-size:13px;margin-bottom:16px">请确认以下数据无误后点击确认导入。</p>`;
+
+    if (type === 'sheet') {
+        // Flat array of passwords
+        html += `<p style="font-size:12px;color:var(--text2);margin-bottom:8px">共 ${data.length} 条密码记录</p>`;
+        html += `<div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);margin-bottom:16px">`;
+        html += `<table class="excel-table" style="font-size:12px">`;
+        html += `<thead><tr><th>标题</th><th>用户名</th><th>密码</th><th>网址</th><th>备注</th></tr></thead><tbody>`;
+        for (const p of data) {
+            html += `<tr><td>${escapeHtmlForTable(p.title)}</td><td>${escapeHtmlForTable(p.username)}</td><td style="font-family:var(--font-mono);font-size:11px">••••••</td><td>${escapeHtmlForTable(p.url)}</td><td>${escapeHtmlForTable(p.notes)}</td></tr>`;
+        }
+        html += `</tbody></table></div>`;
+    } else {
+        // Grouped by sheet_name
+        let total = 0;
+        for (const sheet of data) total += sheet.passwords.length;
+        html += `<p style="font-size:12px;color:var(--text2);margin-bottom:8px">共 ${data.length} 个表，${total} 条密码记录</p>`;
+        html += `<div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);margin-bottom:16px">`;
+        html += `<table class="excel-table" style="font-size:12px">`;
+        html += `<thead><tr><th>密码表</th><th>标题</th><th>用户名</th><th>密码</th><th>网址</th><th>备注</th></tr></thead><tbody>`;
+        for (const sheet of data) {
+            let first = true;
+            for (const p of sheet.passwords) {
+                html += `<tr>${first ? '<td style="font-weight:500;color:var(--text3)">' + escapeHtml(sheet.sheet_name) + '</td>' : '<td></td>'}`;
+                html += `<td>${escapeHtmlForTable(p.title)}</td><td>${escapeHtmlForTable(p.username)}</td><td style="font-family:var(--font-mono);font-size:11px">••••••</td><td>${escapeHtmlForTable(p.url)}</td><td>${escapeHtmlForTable(p.notes)}</td></tr>`;
+                first = false;
+            }
+        }
+        html += `</tbody></table></div>`;
+    }
+
+    html += `<div style="display:flex;gap:8px">`;
+    html += `<button class="btn" onclick="closeModal(null)" style="flex:1">取消</button>`;
+    html += `<button class="btn btn-primary" onclick="confirmImport('${escapeJs(type)}')" style="flex:1">确认导入</button>`;
+    html += `</div>`;
+
+    // Store the confirm callback
+    window._importConfirmCallback = onConfirm;
+    showModal(html);
+}
+
+function confirmImport(type) {
+    if (window._importConfirmCallback) {
+        window._importConfirmCallback();
+        window._importConfirmCallback = null;
+    }
 }
 
 // ─── Sheet CRUD ──────────────────────────────────────────────────────────

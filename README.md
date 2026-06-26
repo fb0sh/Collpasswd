@@ -115,6 +115,17 @@ cargo build --release
 
 > ⚠️ **管理员密码即主密钥**，忘记密码 = **所有数据永久丢失**。请妥善保管！
 
+### 测试数据（快捷体验）
+
+```bash
+cargo run --bin seed-example -- --db demo.db
+```
+生成包含管理员/测试用户和示例密码的数据库并打印账户信息。直接用该数据库启动：
+```bash
+cargo run -- --no-tls --addr 0.0.0.0:8080 --db demo.db
+```
+> 管理员密码：启动时自动生成并打印（也可用 `--admin-password` 指定）
+
 ### 访问
 
 打开浏览器访问 `https://localhost:443`（或你指定的地址）。  

@@ -161,6 +161,7 @@ async function navigateTo(view, ...args) {
 
     switch (view) {
         case 'dashboard':
+            _currentBookId = null;
             document.getElementById('view-dashboard').classList.add('active');
             document.getElementById('current-view-title').textContent = '我的项目';
             document.getElementById('crumb-book').style.display = 'none';
@@ -781,7 +782,7 @@ function filterBookPasswords() {
                 <td style="font-weight:500;color:var(--text3)" title="${escapeHtml(p.sheet_name)}">${escapeHtml(p.sheet_name)}</td>
                 <td style="font-weight:500" title="${escapeHtml(p.title)}">${highlightMatch(escapeHtml(p.title), q)}</td>
                 <td class="cell-mono" title="${escapeHtml(p.username || '')}">${p.username ? highlightMatch(escapeHtml(p.username), q) : '<span class="cell-empty">—</span>'}</td>
-                <td title="${escapeHtml(p.url || '')}" style="white-space:nowrap">${escapeHtml(p.url || '') || '<span class="cell-empty">—</span>'}</td>
+                <td title="${escapeHtml(p.url || '')}" style="white-space:nowrap">${renderUrl(p.url)}</td>
                 <td id="search-pass-cell-${pwId}">
                     <span class="revealed-pass">
                         <span class="pass-text" id="search-pass-text-${pwId}">••••••••</span>
@@ -997,7 +998,7 @@ function renderPasswordRows(passwords) {
             <td style="text-align:center"><input type="checkbox" class="pw-checkbox" data-pw-id="${p.id}" onchange="updatePwBatchBar()" style="margin:0"></td>
             <td style="font-weight:500" title="${escapeHtml(p.title)}">${escapeHtml(p.title)}</td>
             <td class="cell-mono" title="${escapeHtml(p.username || '')}">${p.username || '<span class="cell-empty">—</span>'}</td>
-            <td title="${escapeHtml(p.url || '')}" style="white-space:nowrap">${p.url || '<span class="cell-empty">—</span>'}</td>
+            <td title="${escapeHtml(p.url || '')}" style="white-space:nowrap">${renderUrl(p.url)}</td>
             <td id="pw-pass-cell-${p.id}">
                 <span class="revealed-pass">
                     <span class="pass-text" id="pass-text-${p.id}">••••••••</span>
@@ -1685,6 +1686,14 @@ function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+}
+
+function renderUrl(url) {
+    if (!url) return '<span class="cell-empty">—</span>';
+    const href = url.match(/^https?:\/\//) ? url : 'https://' + url;
+    const display = escapeHtml(url);
+    const safeHref = href.replace(/"/g, '&quot;');
+    return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" class="url-link" onclick="event.stopPropagation()">${display}</a>`;
 }
 
 function escapeJs(str) {

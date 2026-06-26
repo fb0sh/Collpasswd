@@ -27,6 +27,9 @@ pub struct IoPassword {
     pub notes: Option<String>,
 }
 
+/// Maximum uploaded XLSX file size (10 MB)
+const MAX_XLSX_SIZE: usize = 10 * 1024 * 1024;
+
 /// GET /api/sheets/:id/export — export passwords from a sheet as JSON
 pub async fn export_sheet(
     AuthWithDb { user, db, master_key }: AuthWithDb,
@@ -368,6 +371,9 @@ pub async fn import_book(
 
 /// Parse XLSX bytes into Vec<IoPassword> from the first worksheet
 fn parse_xlsx_passwords(data: Vec<u8>) -> Result<Vec<IoPassword>, AppError> {
+    if data.len() > MAX_XLSX_SIZE {
+        return Err(AppError::bad_request(format!("文件过大（{}MB 限制），请上传较小的文件", MAX_XLSX_SIZE / 1024 / 1024)));
+    }
     let cursor = Cursor::new(data);
     let mut workbook: Xlsx<Cursor<Vec<u8>>> =
         open_workbook_from_rs(cursor).map_err(|e| AppError::bad_request(format!("无法解析 XLSX: {}", e)))?;
@@ -393,7 +399,7 @@ fn parse_xlsx_passwords(data: Vec<u8>) -> Result<Vec<IoPassword>, AppError> {
     let title_idx = headers.iter().position(|h| h == "title");
     let user_idx = headers.iter().position(|h| h == "username");
     let pass_idx = headers.iter().position(|h| h == "password");
-    let url_idx = headers.iter().position(|h| h == "url" || h == "url" || h == "website");
+    let url_idx = headers.iter().position(|h| h == "url" || h == "website");
     let notes_idx = headers.iter().position(|h| h == "notes" || h == "note" || h == "备注");
 
     let title_idx = title_idx.ok_or_else(|| AppError::bad_request("XLSX 缺少 title 列"))?;
@@ -464,6 +470,10 @@ pub async fn preview_book_xlsx(
 
     if file_bytes.is_empty() {
         return Err(AppError::bad_request("未上传文件"));
+    }
+
+    if file_bytes.len() > MAX_XLSX_SIZE {
+        return Err(AppError::bad_request(format!("文件过大（{}MB 限制），请上传较小的文件", MAX_XLSX_SIZE / 1024 / 1024)));
     }
 
     let cursor = Cursor::new(file_bytes);
@@ -698,12 +708,12 @@ pub async fn template_sheet_xlsx() -> Result<impl IntoResponse, AppError> {
 
     ws.write_string(1, 0, "生产服务器 SSH").map_err(|e| AppError::internal(e.to_string()))?;
     ws.write_string(1, 1, "root").map_err(|e| AppError::internal(e.to_string()))?;
-    ws.write_string(1, 2, "YourPasswordHere").map_err(|e| AppError::internal(e.to_string()))?;
+    ws.write_string(1, 2, "请输入密码").map_err(|e| AppError::internal(e.to_string()))?;
     ws.write_string(1, 3, "192.168.1.1").map_err(|e| AppError::internal(e.to_string()))?;
     ws.write_string(1, 4, "root 用户").map_err(|e| AppError::internal(e.to_string()))?;
     ws.write_string(2, 0, "测试服务器").map_err(|e| AppError::internal(e.to_string()))?;
     ws.write_string(2, 1, "admin").map_err(|e| AppError::internal(e.to_string()))?;
-    ws.write_string(2, 2, "AnotherPassword").map_err(|e| AppError::internal(e.to_string()))?;
+    ws.write_string(2, 2, "请输入密码").map_err(|e| AppError::internal(e.to_string()))?;
     ws.write_string(2, 3, "10.0.0.1").map_err(|e| AppError::internal(e.to_string()))?;
     ws.write_string(2, 4, "开发环境").map_err(|e| AppError::internal(e.to_string()))?;
 
@@ -725,12 +735,12 @@ pub async fn template_book_xlsx() -> Result<impl IntoResponse, AppError> {
     }
     ws1.write_string(1, 0, "生产服务器 SSH").map_err(|e| AppError::internal(e.to_string()))?;
     ws1.write_string(1, 1, "root").map_err(|e| AppError::internal(e.to_string()))?;
-    ws1.write_string(1, 2, "YourPasswordHere").map_err(|e| AppError::internal(e.to_string()))?;
+    ws1.write_string(1, 2, "请输入密码").map_err(|e| AppError::internal(e.to_string()))?;
     ws1.write_string(1, 3, "192.168.1.1").map_err(|e| AppError::internal(e.to_string()))?;
     ws1.write_string(1, 4, "root 用户").map_err(|e| AppError::internal(e.to_string()))?;
     ws1.write_string(2, 0, "测试服务器").map_err(|e| AppError::internal(e.to_string()))?;
     ws1.write_string(2, 1, "admin").map_err(|e| AppError::internal(e.to_string()))?;
-    ws1.write_string(2, 2, "AnotherPassword").map_err(|e| AppError::internal(e.to_string()))?;
+    ws1.write_string(2, 2, "请输入密码").map_err(|e| AppError::internal(e.to_string()))?;
     ws1.write_string(2, 3, "10.0.0.1").map_err(|e| AppError::internal(e.to_string()))?;
     ws1.write_string(2, 4, "开发环境").map_err(|e| AppError::internal(e.to_string()))?;
 
@@ -742,7 +752,7 @@ pub async fn template_book_xlsx() -> Result<impl IntoResponse, AppError> {
     }
     ws2.write_string(1, 0, "MySQL 生产").map_err(|e| AppError::internal(e.to_string()))?;
     ws2.write_string(1, 1, "dbadmin").map_err(|e| AppError::internal(e.to_string()))?;
-    ws2.write_string(1, 2, "DBPass123").map_err(|e| AppError::internal(e.to_string()))?;
+    ws2.write_string(1, 2, "请输入密码").map_err(|e| AppError::internal(e.to_string()))?;
     ws2.write_string(1, 3, "db01.example.com").map_err(|e| AppError::internal(e.to_string()))?;
     ws2.write_string(1, 4, "主库").map_err(|e| AppError::internal(e.to_string()))?;
 

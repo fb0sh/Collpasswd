@@ -16,10 +16,12 @@ pub fn log_action(
     action: &str,
     detail: &str,
 ) {
-    let _ = conn.execute(
+    if let Err(e) = conn.execute(
         "INSERT INTO audit_logs (book_id, sheet_id, password_id, user_id, username, action, detail) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         rusqlite::params![book_id, sheet_id, password_id, user_id, username, action, detail],
-    );
+    ) {
+        tracing::warn!("Failed to write audit log: {}", e);
+    }
 }
 
 #[derive(Deserialize)]
@@ -35,17 +37,18 @@ struct AuditWhere {
 }
 
 fn build_audit_where(
-    base_where: &str,
+    book_id: Option<i64>,
     params: &AuditQueryParams,
 ) -> AuditWhere {
     let mut parts = Vec::new();
     let mut sql_params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
 
-    if !base_where.is_empty() {
-        parts.push(base_where.to_string());
+    if let Some(bid) = book_id {
+        parts.push("a.book_id = ?".to_string());
+        sql_params.push(Box::new(bid));
     }
     if let Some(ref act) = params.action {
-        parts.push(format!("a.action = ?{}", sql_params.len() + 1));
+        parts.push("a.action = ?".to_string());
         sql_params.push(Box::new(act.clone()));
     }
 
@@ -65,7 +68,7 @@ pub async fn list_audit_global(
     let conn = db.get().map_err(AppError::internal)?;
     let limit = params.limit.unwrap_or(50).min(500);
     let offset = params.offset.unwrap_or(0);
-    let w = build_audit_where("", &params);
+    let w = build_audit_where(None, &params);
 
     // Count total
     let count_sql = format!("SELECT COUNT(*) FROM audit_logs a LEFT JOIN books b ON a.book_id = b.id WHERE {}", w.sql);
@@ -80,7 +83,7 @@ pub async fn list_audit_global(
                 a.user_id, a.username, a.action, a.detail, a.created_at
          FROM audit_logs a
          LEFT JOIN books b ON a.book_id = b.id
-         WHERE {} ORDER BY a.created_at DESC LIMIT ?1 OFFSET ?2",
+         WHERE {} ORDER BY a.created_at DESC LIMIT ? OFFSET ?",
         w.sql
     );
 
@@ -135,8 +138,7 @@ pub async fn list_audit_book(
 
     let limit = params.limit.unwrap_or(20).min(200);
     let offset = params.offset.unwrap_or(0);
-    let base = format!("a.book_id = {}", book_id);
-    let w = build_audit_where(&base, &params);
+    let w = build_audit_where(Some(book_id), &params);
 
     // Count total
     let count_sql = format!("SELECT COUNT(*) FROM audit_logs a LEFT JOIN books b ON a.book_id = b.id WHERE {}", w.sql);
@@ -151,7 +153,7 @@ pub async fn list_audit_book(
                 a.user_id, a.username, a.action, a.detail, a.created_at
          FROM audit_logs a
          LEFT JOIN books b ON a.book_id = b.id
-         WHERE {} ORDER BY a.created_at DESC LIMIT ?1 OFFSET ?2",
+         WHERE {} ORDER BY a.created_at DESC LIMIT ? OFFSET ?",
         w.sql
     );
 

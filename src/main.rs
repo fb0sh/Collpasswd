@@ -1,13 +1,7 @@
-mod auth;
-mod crypto;
-mod db;
-mod errors;
-mod models;
-mod routes;
-
-use crate::auth::{hash_password, verify_password, AppState};
-use crate::crypto::MasterKey;
-use crate::db::init_db;
+use collpasswd::auth::{hash_password, verify_password, AppState, JwtSecret};
+use collpasswd::crypto::MasterKey;
+use collpasswd::db::init_db;
+use collpasswd::routes;
 use axum::{
     body::Body,
     http::{header, StatusCode, Uri},
@@ -263,7 +257,7 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
-    let jwt_secret = Arc::new(auth::JwtSecret(jwt_secret_str));
+    let jwt_secret = Arc::new(JwtSecret(jwt_secret_str));
 
     // Read JWT expiry from config (default 24h)
     let jwt_expiry_hours = {

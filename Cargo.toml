@@ -49,3 +49,7 @@ libc = "0.2"
 axum-server = { version = "0.7", features = ["tls-rustls"] }
 rcgen = "0.12.1"
 time = { version = "0.3", features = ["formatting"] }
+
+[[bin]]
+name = "seed-example"
+path = "src/bin/seed_example.rs"

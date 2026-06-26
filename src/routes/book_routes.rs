@@ -376,6 +376,19 @@ pub fn check_book_access(
     book_id: i64,
     user_id: i64,
 ) -> Result<(), AppError> {
+    // Admin can access any book
+    let is_admin: bool = conn
+        .query_row(
+            "SELECT COUNT(*) > 0 FROM users WHERE id = ?1 AND role = 'admin'",
+            [user_id],
+            |row| row.get(0),
+        )
+        .map_err(|_| AppError::internal("Database error"))?;
+
+    if is_admin {
+        return Ok(());
+    }
+
     let exists: bool = conn
         .query_row(
             "SELECT COUNT(*) > 0 FROM book_members WHERE book_id = ?1 AND user_id = ?2",
@@ -414,7 +427,7 @@ pub fn can_edit_book(conn: &rusqlite::Connection, book_id: i64, user_id: i64) ->
     );
 
     match role {
-        Ok(r) => Ok(r == "edit" || r == "admin" || r == "editor"),
+        Ok(r) => Ok(r == "edit"),
         Err(_) => Ok(false),
     }
 }
